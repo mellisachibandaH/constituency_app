@@ -1,12 +1,18 @@
-const express = require('express');
+const express = require('express'); 
 const axios = require('axios');
+const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Serve frontend files
-app.use(express.static('public'));
+app.use(express.static(path.join(__dirname, 'public')));
 
-// Proxy route for GeoServer WFS requests
+// Catch-all to serve index.html
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// Proxy route (works only if GeoServer is online and accessible)
 app.get('/wfs', async (req, res) => {
   try {
     const response = await axios.get('http://localhost:8081/geoserver/wfs', {
