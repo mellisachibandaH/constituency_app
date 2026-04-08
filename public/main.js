@@ -1,5 +1,5 @@
  // ================= CONFIG ================= 
-const GEOSERVER_URL = 'http://localhost:8081/geoserver';
+const GEOSERVER_URL = 'http://192.168.1.50:8081/geoserver';
 const WORKSPACE_LAYER = 'map_application:Matnort_2';
 
 // Public Health Layers
@@ -105,7 +105,7 @@ tabButtons.forEach(tab => {
 // ---------------- VECTOR ----------------
 const wardVectorSource = new ol.source.Vector({
     format: new ol.format.GeoJSON(),
-    url: `${GEOSERVER_URL}/wfs?service=WFS&version=1.1.0&request=GetFeature&typeName=${WORKSPACE_LAYER}&outputFormat=application/json&srsname=EPSG:3857`
+    url: 'data/Matnort_2.geojson'
 });
 const wardLayer = new ol.layer.Vector({
     source: wardVectorSource,
@@ -115,19 +115,16 @@ map.addLayer(wardLayer);
 const waterVector = new ol.layer.Vector({
     source: new ol.source.Vector({
         format: new ol.format.GeoJSON(),
-        url: `${GEOSERVER_URL}/wfs?service=WFS&version=1.1.0&request=GetFeature&typeName=${WATER_LAYER}&outputFormat=application/json&srsname=EPSG:3857`
-    }),
-    visible: false
+        url: 'data/Waterpoint_3.geojson'
+    })
 });
-
 map.addLayer(waterVector);
 
 const schoolVector = new ol.layer.Vector({
     source: new ol.source.Vector({
         format: new ol.format.GeoJSON(),
-        url: `${GEOSERVER_URL}/wfs?service=WFS&version=1.1.0&request=GetFeature&typeName=${SCHOOL_LAYER}&outputFormat=application/json&srsname=EPSG:3857`
-    }),
-    visible: false
+        url: 'data/school_4.geojson'
+    })
 });
 map.addLayer(schoolVector);
 // ---------------- STYLES ----------------
@@ -323,23 +320,28 @@ async function updateWardLabels(cql=''){
     wardVectorSource.setUrl(url);
     wardVectorSource.refresh();
 }
-function applySettlementFilter(){
-    const filter = escapeCQL(elProv.value) ?
-        `province='${escapeCQL(elProv.value)}'` +
-        (elConst.value ? ` AND constituen='${escapeCQL(elConst.value)}'` : '') +
-        (elWard.value ? ` AND wardnumber='${escapeCQL(elWard.value)}'` : '')
-        : '';
+function applySettlementFilter() {
+    const province = elProv.value;
+    const constituency = elConst.value;
+    const ward = elWard.value;
 
-    let src = settlementsVector.getSource();
-    let url = `${GEOSERVER_URL}/wfs?service=WFS&version=1.1.0&request=GetFeature&typeName=${SETTLEMENTS_LAYER}&outputFormat=application/json&srsname=EPSG:3857`;
+    const source = settlementsVector.getSource();
 
-    if(filter){
-        url += '&CQL_FILTER=' + encodeURIComponent(filter);
-    }
+    // assuming you already loaded all features once
+    const allFeatures = source.getFeatures();
 
-    src.clear();   // remove old features
-    src.setUrl(url);
-    src.refresh();
+    // filter features locally
+    const filtered = allFeatures.filter(feature => {
+        const props = feature.getProperties();
+
+        return (!province || props.province === province) &&
+               (!constituency || props.constituen === constituency) &&
+               (!ward || props.wardnumber === ward);
+    });
+
+    // clear and re-add filtered features
+    source.clear();
+    source.addFeatures(filtered);
 }
 
 // ---------------- Populate Province ----------------
@@ -543,18 +545,35 @@ const healthLegendService = document.getElementById('health-legend-service');
 const healthLegendDeficit = document.getElementById('health-legend-deficit');
 
 // ---------------- VECTOR LAYERS FOR PUBLIC HEALTH ----------------
-const healthVector = new ol.layer.Vector({ 
-    source: new ol.source.Vector({format: new ol.format.GeoJSON(), url:`${GEOSERVER_URL}/wfs?service=WFS&version=1.1.0&request=GetFeature&typeName=${HEALTH_LAYER}&outputFormat=application/json&srsname=EPSG:3857`}) 
+const healthVector = new ol.layer.Vector({
+    source: new ol.source.Vector({ 
+        format: new ol.format.GeoJSON(),
+        url: 'data/Health_2.geojson'
+    })
 });
-const bufferVector = new ol.layer.Vector({ 
-    source: new ol.source.Vector({format: new ol.format.GeoJSON(), url:`${GEOSERVER_URL}/wfs?service=WFS&version=1.1.0&request=GetFeature&typeName=${HEALTH_BUFFER}&outputFormat=application/json&srsname=EPSG:3857`}) 
+map.addLayer(healthVector);
+const bufferVector = new ol.layer.Vector({
+    source: new ol.source.Vector({ 
+        format: new ol.format.GeoJSON(),
+        url: 'data/Health_buffer.geojson'
+    })
 });
-const roadsVector = new ol.layer.Vector({ 
-    source: new ol.source.Vector({format: new ol.format.GeoJSON(), url:`${GEOSERVER_URL}/wfs?service=WFS&version=1.1.0&request=GetFeature&typeName=${ROADS_LAYER}&outputFormat=application/json&srsname=EPSG:3857`}) 
+map.addLayer(bufferVector);
+const roadsVector = new ol.layer.Vector({
+    source: new ol.source.Vector({
+        format: new ol.format.GeoJSON(),
+        url: 'data/lovedroads.geojson'
+    })
 });
-const settlementsVector = new ol.layer.Vector({ 
-    source: new ol.source.Vector({format: new ol.format.GeoJSON(), url:`${GEOSERVER_URL}/wfs?service=WFS&version=1.1.0&request=GetFeature&typeName=${SETTLEMENTS_LAYER}&outputFormat=application/json&srsname=EPSG:3857`}) 
+map.addLayer(settlementsVector);
+const settlementsVector = new ol.layer.Vector({
+    source: new ol.source.Vector({
+        format: new ol.format.GeoJSON(),
+        url: 'data/settlements_2.geojson'
+    })
 });
+map.addLayer(settlementsVector);
+
 
 // Hide by default
 healthVector.setVisible(false);
