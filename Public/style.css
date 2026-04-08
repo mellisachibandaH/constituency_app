@@ -1,0 +1,171 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+/* MAIN LAYOUT */
+.app-container {
+    display: flex;
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+}
+
+/* LEFT PANEL */
+.left-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    border-right: 2px solid #ddd;
+    background: #eee;
+}
+
+/* CONTROLS */
+.controls {
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background: #fff;
+    border-bottom: 1px solid #ccc;
+}
+
+select {
+    padding: 8px;
+    border: 1px solid #aaa;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+/* MAP */
+.map-container {
+    flex: 1;
+    width: 100%;
+    height: 100%;
+    background: #dfdfdf;
+}
+
+/* RIGHT PANEL */
+.right-panel {
+    flex: 1.5;
+    padding: 20px;
+    background: #fff;
+    overflow-y: auto;
+}
+
+/* HEADINGS */
+h1 {
+    color: #1e293b;
+    font-size: 22px;
+}
+
+.subtitle {
+    color: #64748b;
+    margin-top: 5px;
+    margin-bottom: 10px;
+}
+
+/* TABS */
+.tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+}
+
+.tabs button {
+    padding: 8px 12px;
+    border: none;
+    background: #e2e8f0;
+    cursor: pointer;
+    border-radius: 5px;
+    font-size: 13px;
+}
+
+.tabs button.active {
+    background: #1e293b;
+    color: #fff;
+}
+
+/* INFO CARD */
+.info-card {
+    background: #f8fafc;
+    padding: 20px;
+    border-radius: 10px;
+    border-left: 5px solid #1e293b;
+    margin-top: 15px;
+}
+
+.info-card p {
+    margin: 8px 0;
+    font-size: 14px;
+}
+
+/* LEGENDS */
+.legend {
+    margin-top: 15px;
+    padding: 12px;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+}
+
+.legend h3 {
+    margin-bottom: 8px;
+    font-size: 14px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 4px 0;
+    font-size: 13px;
+}
+
+.legend-item span {
+    display: inline-block;
+    width: 20px;
+    height: 12px;
+    border: 1px solid #555;
+}
+
+/* CUSTOM LEGEND STYLES */
+.legend-point {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+}
+
+.legend-polygon {
+    width: 12px;
+    height: 12px;
+}
+
+.legend-line {
+    height: 3px;
+    width: 40px;
+}
+
+.legend-rect {
+    width: 18px;
+    height: 10px;
+}
+
+/* BUTTON */
+.zoom-btn {
+    padding: 8px;
+    margin-top: 5px;
+    background: #1e293b;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+}
+
+.zoom-btn:hover {
+    background: #374151;
+}

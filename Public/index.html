@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Matnorth Monitoring Tool</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="libs/ol.css">
+</head>
+<body>
+<div class="app-container">
+
+    <!-- LEFT PANEL -->
+    <div class="left-panel">
+        <div class="controls">
+            <select id="select-province">
+                <option value="">Select Province</option>
+            </select>
+            <select id="select-constituency" disabled>
+                <option value="">Select Constituency</option>
+            </select>
+            <select id="select-ward" disabled>
+                <option value="">Select Ward</option>
+            </select>
+            <button id="zoom-layer" class="zoom-btn">Zoom to Layer</button>
+        </div>
+        <div id="map" class="map-container"></div>
+    </div>
+
+    <!-- RIGHT PANEL -->
+    <div class="right-panel">
+       
+       <!-- MAIN TABS -->
+        <div class="tabs">
+            <button id="tab-overview" class="active">Overview</button>
+            <button id="tab-demography">Demography</button>
+            <button id="tab-welfare">Welfare</button>
+            <button id="tab-health">Public Health</button>
+            <button id="tab-roads">Road Networks</button>
+            <button id="tab-water">Water & Sanitation</button>
+            <button id="tab-education">Education</button>
+        </div>
+          
+        <!-- POPULATION & WELFARE LEGENDS -->
+        <div id="pop-legend" class="legend" style="display:none;">
+            <h3>Population Legend</h3>
+            <div class="legend-item"><span style="background:#ffffcc"></span> 600 - 1200</div>
+            <div class="legend-item"><span style="background:#fd8d3c"></span> 1201 - 1600</div>
+            <div class="legend-item"><span style="background:#e31a1c"></span> 1601 - 1900</div>
+            <div class="legend-item"><span style="background:#800026"></span> 1901 - 2000</div>
+        </div>
+        <div id="prev-legend" class="legend" style="display:none;">
+            <h3>Poverty Prevalence (%)</h3>
+            <div class="legend-item"><span style="background:#fee5d9"></span> 10 - 25</div>
+            <div class="legend-item"><span style="background:#fcae91"></span> 26 - 40</div>
+            <div class="legend-item"><span style="background:#fb6a4a"></span> 41 - 55</div>
+            <div class="legend-item"><span style="background:#cb181d"></span> 56 - 70</div>
+        </div>
+        <div id="gap-legend" class="legend" style="display:none;">
+            <h3>Poverty Gap Index</h3>
+            <div class="legend-item"><span style="background:#eff3ff"></span> 1.1 - 3</div>
+            <div class="legend-item"><span style="background:#bdd7e7"></span> 3.1 - 5</div>
+            <div class="legend-item"><span style="background:#6baed6"></span> 5.1 - 7</div>
+            <div class="legend-item"><span style="background:#2171b5"></span> 7.1 - 9.5</div>
+        </div>
+
+        <!-- HEALTH LEGENDS -->
+        <div id="health-legend-facilities" class="legend" style="display:none;">
+            <h3>Health Facilities</h3>
+            <div class="legend-item"><span class="legend-point" style="background:red"></span> Hospital</div>
+            <div class="legend-item"><span class="legend-point" style="background:green"></span> Clinic</div>
+            <div class="legend-item"><span class="legend-point" style="background:orange"></span> Pharmacy</div>
+            <div class="legend-item"><span class="legend-point" style="background:#3182bd"></span> Health Centres</div>
+            <div class="legend-item"><span class="legend-polygon" style="background:#b87f53"></span> Settlements</div>
+        </div>
+        <div id="health-legend-service" class="legend" style="display:none;">
+            <h3>Service Zones</h3>
+            <div class="legend-item"><span class="legend-point" style="background:#3182bd"></span> Health Facility</div>
+            <div class="legend-item"><span class="legend-polygon" style="background:rgba(102,194,165,0.4)"></span> Service Area</div>
+            <div class="legend-item"><span class="legend-polygon" style="background:#b87f53"></span> Settlements</div>
+        </div>
+        <div id="health-legend-deficit" class="legend" style="display:none;">
+            <h3>Deficit Zones</h3>
+            <div class="legend-item"><span class="legend-point" style="background:#aaa"></span> Health Facility</div>
+            <div class="legend-item"><span class="legend-polygon" style="background:rgba(255,255,255,0.6)"></span> Service Area</div>
+            <div class="legend-item"><span class="legend-polygon" style="background:#b87f53"></span> Settlements</div>
+            <div class="legend-item"><span class="legend-line" style="background:#ba3434; height:3px; width:50px; display:inline-block;"></span> Paved Roads</div>
+            <div class="legend-item"><span class="legend-line" style="background:#ebd45f; height:2px; width:50px; display:inline-block;"></span> Unpaved Roads</div>
+        </div>
+
+        <!-- ROADS LEGENDS -->
+        <div id="roads-legend-condition" class="legend" style="display:none;">
+            <h3>Road Condition</h3>
+            <div class="legend-item"><span class="legend-line" style="background:#e74c3c; height:3px; width:50px; display:inline-block;"></span> Poor to very Poor</div>
+            <div class="legend-item"><span class="legend-line" style="background:#f1c40f; height:3px; width:50px; display:inline-block;"></span> Fair</div>
+        </div>
+        <div id="roads-legend-surface" class="legend" style="display:none;">
+            <h3>Surface Type</h3>
+            <div class="legend-item"><span class="legend-line" style="background:#ba3434; height:3px; width:50px; display:inline-block;"></span> Paved</div>
+            <div class="legend-item"><span class="legend-line" style="background:#ebd45f; height:2px; width:50px; display:inline-block;"></span> Unpaved</div>
+        </div>
+          <!--Water Legends -->
+    <div id="water-legend-functional" class="legend" style="display:none;">
+        <h3>Functional State</h3>
+        <div class="legend-item"><span class="legend-rect" style="background:#2ca25f"></span> Functional</div>
+        <div class="legend-item"><span class="legend-rect" style="background:#fc9272"></span> Partially Functional</div>
+        <div class="legend-item"><span class="legend-rect" style="background:#de2d26"></span> Non-Functional</div>
+        <div class="legend-item"><span class="legend-rect" style="background:#3182BD"></span> Collapsed/Abandoned</div>
+        <div class="legend-item"><span class="legend-rect" style="background:#800080"></span> N/A</div>
+    </div>
+    <div id="water-legend-type" class="legend" style="display:none;">
+        <h3>Water Source Type</h3>
+        <div class="legend-item"><span class="legend-rect" style="background:#3182bd"></span> Borehole</div>
+        <div class="legend-item"><span class="legend-rect" style="background:#990e0e"></span> Deep Well</div>
+        <div class="legend-item"><span class="legend-rect" style="background:#4daf4a"></span> Spring</div>
+        <div class="legend-item"><span class="legend-rect" style="background:#d838a5"></span> Shallow Well</div>
+        <div class="legend-item"><span class="legend-rect" style="background:#c4dd0b"></span> Dam</div>
+        <div class="legend-item"><span class="legend-rect" style="background:#c6dbef"></span> Other</div>
+    </div>
+        <!-- Education Legends -->
+    <div id="education-legend" class="legend" style="display:none;">
+    <h3>Legend</h3>
+    <div class="legend-item"><span class="legend-rect" style="background:#3182bd"></span> Male</div>
+    <div class="legend-item"><span class="legend-rect" style="background:#fc6ea8"></span> Female</div>
+ </div>
+       <!-- OVERVIEW CONTENT -->
+        <div id="overview-content">
+            <h1 id="display-title">Matabeleland North Overview</h1>
+            <p class="subtitle">Detailed breakdown by administrative boundary.</p>
+            <hr>
+            <div class="info-card">
+                <h3>Current Selection</h3>
+                <p><strong>Province:</strong> <span id="res-province">N/A</span></p>
+                <p><strong>Constituency:</strong> <span id="res-constituency">N/A</span></p>
+                <p><strong>Ward:</strong> <span id="res-ward">N/A</span></p>    
+           </div>
+        </div>
+        
+        <!-- DEMOGRAPHY CONTENT -->
+        <div id="demography-content" style="display:none;">
+            <h1>Population Distribution</h1>
+            <p class="subtitle">Shows population distribution.</p>
+            <hr>
+            <div class="info-card">
+                <h3>Population Stats</h3>
+                <p><strong>Province:</strong> <span id="pop-province">N/A</span></p>
+                <p><strong>Constituency:</strong> <span id="pop-constituency">N/A</span></p>
+                <p><strong>Total Population:</strong> <span id="pop-total">N/A</span></p>
+                <canvas id="chart_0_14" style="margin-top:20px;"></canvas>
+                <canvas id="chart_15_64" style="margin-top:30px;"></canvas>
+                <canvas id="chart_65" style="margin-top:30px;"></canvas>
+            </div>
+        </div>
+
+        <!-- WELFARE CONTENT -->
+        <div id="welfare-content" style="display:none;">
+            <h1>Social Welfare</h1>
+            <p class="subtitle">Poverty analysis indicators.</p>
+            <hr>
+            <div class="tabs">
+                <button id="btn-prevalence" class="active">Prevalence</button>
+                <button id="btn-gap">Gap</button>
+            </div>
+            <div class="info-card">
+                <h3>Welfare Stats</h3>
+                <p><strong>Province:</strong> <span id="wel-province">N/A</span></p>
+                <p><strong>Constituency:</strong> <span id="wel-constituency">N/A</span></p>
+                <p><strong>Average Value:</strong> <span id="wel-value">N/A</span></p>
+                <canvas id="welfareChart" style="margin-top:20px;"></canvas>
+            </div>
+        </div>
+
+        <!-- PUBLIC HEALTH CONTENT -->
+        <div id="health-content" style="display:none;">
+            <h1>Public Health</h1>
+            <p class="subtitle">Health access and service coverage.</p>
+            <hr>
+            <div class="tabs">
+                <button id="btn-health-dist" class="active">Facilities</button>
+                <button id="btn-health-zone">Service Zones</button>
+                <button id="btn-health-deficit">Deficit Zones</button>
+            </div>
+            <div class="info-card">
+                <h3>Health Summary</h3>
+                <p>Explore health facilities, service coverage zones, and deficit areas.</p>
+            </div>
+        </div>
+
+        <!-- ROADS CONTENT -->
+        <div id="roads-content" style="display:none;">
+             <h1>Road Networks</h1>
+             <p class="subtitle">Analyze road condition and surface type.</p>
+             <hr>
+             <div class="tabs">
+                  <button id="btn-road-condition" class="active">Condition</button>
+                  <button id="btn-road-surface">Surface Type</button>
+              </div>
+             <div class="info-card">
+                  <h3>Road Summary</h3>
+                  <p>Explore road condition and surface classification.</p>
+              </div>
+        </div>
+
+       <!-- WATER & SANITATION CONTENT -->
+       <div id="water-content" style="display:none;">
+            <h1>Water and Sanitation</h1>
+            <p class="subtitle">Explore water points by functional state and type.</p>
+            <hr>
+            <div class="tabs">
+            <button id="btn-water-functional" class="active">Functional State</button>
+            <button id="btn-water-type">Type of Water Source</button>
+        </div>
+       <div class="info-card">
+            <h3>Water Summary</h3>
+            <p>Analyze water points by functional state and source type.</p>
+       </div>
+  </div>
+
+        <!-- EDUCATION CONTENT -->
+        <div id="education-content" style="display:none;">
+             <h1>Education</h1>
+             <p class="subtitle">School enrolment distribution by gender.</p>
+             <hr>
+             <div class="tabs">
+             <button id="btn-education-primary" class="active">Primary Education</button>
+             <button id="btn-education-secondary">Secondary Education</button>
+         </div>
+        <div class="info-card">
+            <h3>Education Summary</h3>
+            <p>Shows male (blue) vs female (pink) enrolment per school.</p>
+       </div>
+   </div>     
+</div>
+<script src="./libs/ol.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="./main.js"></script>
+</body>
+</html>
