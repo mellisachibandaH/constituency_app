@@ -1,5 +1,5 @@
- // ================= CONFIG ================= 
-const GEOSERVER_URL = 'https://trails-toilet-bronchures-consensus.trycloudflare.com/geoserver';
+ // ================= CONFIG =================
+const GEOSERVER_URL = 'https://trails-toilet-brochures-consensus.trycloudflare.com/geoserver';
 const WORKSPACE_LAYER = 'map_application:Matnort_2';
 
 // Public Health Layers
