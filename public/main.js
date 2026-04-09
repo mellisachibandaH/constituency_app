@@ -82,25 +82,6 @@ map.on('singleclick', function(evt) {
     }
 });
 
-// ---------------- EDUCATION POPUP ----------------
-
-// 1️⃣ Create a popup div dynamically
-const popupContainer = document.createElement('div');
-popupContainer.id = 'popup';
-popupContainer.style.cssText = `
-    position: absolute;
-    background: white; 
-    border: 1px solid #333; 
-    padding: 10px; 
-    border-radius: 5px; 
-    min-width: 220px;
-    font-family: Calibri, sans-serif;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-    pointer-events: auto;
-    z-index: 1000;
-`;
-document.body.appendChild(popupContainer);
-
 // 2️⃣ Create an OpenLayers overlay
 const popupOverlay = new ol.Overlay({
     element: popupContainer,
