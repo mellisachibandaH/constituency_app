@@ -1,14 +1,3 @@
- // ================= CONFIG ================= 
-const GEOSERVER_URL = 'http://192.168.1.50:8081/geoserver';
-const WORKSPACE_LAYER = 'map_application:Matnort_2';
-
-// Public Health Layers
-const HEALTH_LAYER = 'map_application:Health_2';
-const HEALTH_BUFFER = 'map_application:Health_buffer';
-const ROADS_LAYER = 'map_application:lovedroads';
-const SETTLEMENTS_LAYER = 'map_application:settlements_2';
-const WATER_LAYER = 'map_application:Waterpoint_3';
-const SCHOOL_LAYER = 'map_application:school_4';
 
 // ---------------- MAP ----------------
 const wmsSource = new ol.source.TileWMS({
@@ -302,126 +291,65 @@ const elProv=document.getElementById('select-province');
 const elConst=document.getElementById('select-constituency');
 const elWard=document.getElementById('select-ward');
 
-async function fetchUniqueNames(field, cql=''){
-    let url=`${GEOSERVER_URL}/wfs?service=WFS&version=1.1.0&request=GetFeature&typeName=${WORKSPACE_LAYER}&propertyName=${field}&outputFormat=application/json`;
-    if(cql) url+=`&cql_filter=${encodeURIComponent(cql)}`;
-    try{
-        const resp = await fetch(url);
-        const data = await resp.json();
-        const vals = data.features.map(f=>f.properties[field]).filter(v=>v!=null);
-        return [...new Set(vals)].sort();
-    }catch(e){console.error(e); return [];}
+function featureMatchesFilter(f){
+    if(elProv.value && f.get('province') !== elProv.value) return false;
+    if(elConst.value && f.get('constituen') !== elConst.value) return false;
+    if(elWard.value && String(f.get('wardnumber')) !== String(elWard.value)) return false;
+    return true;
 }
+function applySettlementFilter(){
+    settlementsVector.setStyle(f => {
+        if(!featureMatchesFilter(f)) return null;
 
-function escapeCQL(str){ return str? str.replace(/'/g,"''") : ''; }
-async function updateWardLabels(cql=''){ 
-    let url=`${GEOSERVER_URL}/wfs?service=WFS&version=1.1.0&request=GetFeature&typeName=${WORKSPACE_LAYER}&outputFormat=application/json&srsname=EPSG:3857`;
-    if(cql) url+=`&cql_filter=${encodeURIComponent(cql)}`;
-    wardVectorSource.setUrl(url);
-    wardVectorSource.refresh();
-}
-function applySettlementFilter() {
-    const province = elProv.value;
-    const constituency = elConst.value;
-    const ward = elWard.value;
+        if(tabEducation.classList.contains('active')){
+            return settlementsEducationStyle(f);
+        }
 
-    const source = settlementsVector.getSource();
-
-    // assuming you already loaded all features once
-    const allFeatures = source.getFeatures();
-
-    // filter features locally
-    const filtered = allFeatures.filter(feature => {
-        const props = feature.getProperties();
-
-        return (!province || props.province === province) &&
-               (!constituency || props.constituen === constituency) &&
-               (!ward || props.wardnumber === ward);
+        return settlementsStyle(f);
     });
-
-    // clear and re-add filtered features
-    source.clear();
-    source.addFeatures(filtered);
 }
 
-// ---------------- Populate Province ----------------
-fetchUniqueNames('province').then(list=>list.forEach(p=>elProv.add(new Option(p,p))));
 
-// ---------------- Dropdown Events ----------------
-elProv.addEventListener('change', async ()=>{
-    const p=escapeCQL(elProv.value);
-    if(!p){
-        wmsSource.updateParams({CQL_FILTER:undefined});
-        updateWardLabels();
-        elConst.disabled=true; elWard.disabled=true;
-        elConst.innerHTML='<option value="">Select Constituency</option>';
-        elWard.innerHTML='<option value="">Select Ward</option>';
-        document.getElementById('res-province').innerText='N/A';
-        document.getElementById('res-constituency').innerText='N/A';
-        document.getElementById('res-ward').innerText='N/A';
-        updatePopulationStats(); updateWelfareStats(); return;
-        applyWaterFilter();
-        applyRoadFilter();
-        elProv.addEventListener('change', applySchoolFilter);
-    
+
+// ---------------- Populate Province & dropdowns ----------------
+function getUniqueValues(features, field){
+    const vals = features.map(f => f.get(field)).filter(v => v != null);
+    return [...new Set(vals)].sort();
+}
+
+// Populate provinces after data loads
+wardVectorSource.once('change', function(){
+    if(wardVectorSource.getState() === 'ready'){
+        const features = wardVectorSource.getFeatures();
+
+        const provinces = getUniqueValues(features, 'province');
+        provinces.forEach(p => elProv.add(new Option(p,p)));
     }
-    wmsSource.updateParams({CQL_FILTER:`province='${p}'`});
-    updateWardLabels(`province='${p}'`);
-    document.getElementById('res-province').innerText=elProv.value;
-    const consts = await fetchUniqueNames('constituen',`province='${p}'`);
-    elConst.innerHTML='<option value="">Select Constituency</option>';
-    consts.forEach(c=>elConst.add(new Option(c,c)));
-    elConst.disabled=false;
-    elWard.disabled=true; elWard.innerHTML='<option value="">Select Ward</option>';
-    document.getElementById('res-constituency').innerText='N/A';
-    document.getElementById('res-ward').innerText='N/A';
-    updatePopulationStats(); updateWelfareStats();
-    applyWaterFilter();
-    applyRoadFilter();
-    applySettlementFilter();
 });
 
-elConst.addEventListener('change', async ()=>{
-    const c=escapeCQL(elConst.value);
-    const p=escapeCQL(elProv.value);
-    if(!c) return;
-    wmsSource.updateParams({CQL_FILTER:`province='${p}' AND constituen='${c}'`});
-    updateWardLabels(`province='${p}' AND constituen='${c}'`);
-    document.getElementById('res-constituency').innerText=elConst.value;
-    document.getElementById('display-title').innerText=`${elConst.value} Overview`;
-    const wards=await fetchUniqueNames('wardnumber',`constituen='${c}'`);
-    elWard.innerHTML='<option value="">Select Ward</option>';
-    wards.forEach(w=>elWard.add(new Option(w,w)));
-    elWard.disabled=false;
-    document.getElementById('res-ward').innerText='N/A';
-    updatePopulationStats(); updateWelfareStats();
-    applyRoadFilter();
+
+elProv.addEventListener('change', ()=>{
     applyWaterFilter();
+    applyRoadFilter();
+    applySchoolFilter();
     applySettlementFilter();
-    document.getElementById('res-constituency').innerText = elConst.value;
-document.getElementById('display-title').innerText=`${elConst.value} Overview`;
-document.getElementById('res-ward').innerText='N/A';
+    applyHealthFilter();
+});
 
-// Add this line:
-
-
+elConst.addEventListener('change', ()=>{
+    applyWaterFilter();
+    applyRoadFilter();
+    applySchoolFilter();
+    applySettlementFilter();
+    applyHealthFilter();
 });
 
 elWard.addEventListener('change', ()=>{
-    const w=escapeCQL(elWard.value);
-    const c=escapeCQL(elConst.value);
-    const p=escapeCQL(elProv.value);
-    if(!w) return;
-    const filter=`province='${p}' AND constituen='${c}' AND wardnumber='${w}'`;
-    wmsSource.updateParams({CQL_FILTER:filter});
-    updateWardLabels(filter);
-    document.getElementById('res-ward').innerText=`Ward ${elWard.value}`;
-    updatePopulationStats(); updateWelfareStats();
-    applyRoadFilter();
     applyWaterFilter();
+    applyRoadFilter();
+    applySchoolFilter();
     applySettlementFilter();
-    // Add this line:
-    
+    applyHealthFilter();
 });
 
 // ---------------- TABS ----------------
@@ -565,13 +493,14 @@ const roadsVector = new ol.layer.Vector({
         url: 'data/lovedroads.geojson'
     })
 });
-map.addLayer(settlementsVector);
+
 const settlementsVector = new ol.layer.Vector({
     source: new ol.source.Vector({
         format: new ol.format.GeoJSON(),
         url: 'data/settlements_2.geojson'
     })
 });
+
 map.addLayer(settlementsVector);
 
 
@@ -582,7 +511,6 @@ roadsVector.setVisible(false);
 settlementsVector.setVisible(false);
 schoolVector.setVisible(false);
 
-map.addLayer(settlementsVector);
 map.addLayer(roadsVector);
 map.addLayer(bufferVector);
 map.addLayer(healthVector);
@@ -677,18 +605,13 @@ function applyHealthTab(tab){
     healthLegendService.style.display='none';
     healthLegendDeficit.style.display='none';
 
-    const filter = escapeCQL(elProv.value) ? 
-        `province='${escapeCQL(elProv.value)}'` + (elConst.value ? ` AND constituen='${escapeCQL(elConst.value)}'` : '') + (elWard.value ? ` AND wardnumber='${escapeCQL(elWard.value)}'` : '')
-        : '';
+    const filter = escapeCQL(elProv.value) ? ...
 
     // update sources with filter
-    [healthVector, bufferVector, roadsVector, settlementsVector].forEach(layer=>{
-        let src = layer.getSource();
-        let url = src.getUrl().split('?')[0] + '?service=WFS&version=1.1.0&request=GetFeature&typeName=' + src.getUrl().split('typeName=')[1].split('&')[0] + '&outputFormat=application/json&srsname=EPSG:3857';
-        if(filter) url += '&CQL_FILTER=' + encodeURIComponent(filter);
-        src.setUrl(url);
-        src.refresh();
+    applyHealthFilter();
+
     });
+}
 
     if(tab==='facilities'){
         healthVector.setVisible(true);
@@ -1192,56 +1115,52 @@ function updateWelfareChart(){
     });
 }
 function applyRoadFilter(){
-    const filter = escapeCQL(elProv.value) ?
-        `province='${escapeCQL(elProv.value)}'` +
-        (elConst.value ? ` AND constituen='${escapeCQL(elConst.value)}'` : '') +
-        (elWard.value ? ` AND wardnumber='${escapeCQL(elWard.value)}'` : '')
-        : '';
+    roadsVector.setStyle(f => {
+        if(!featureMatchesFilter(f)) return null;
 
-    let src = roadsVector.getSource();
+        if(btnRoadCondition.classList.contains('active')){
+            return roadConditionStyle(f);
+        }
 
-    let url = `${GEOSERVER_URL}/wfs?service=WFS&version=1.1.0&request=GetFeature&typeName=${ROADS_LAYER}&outputFormat=application/json&srsname=EPSG:3857`;
+        if(btnRoadSurface.classList.contains('active')){
+            return roadSurfaceStyle(f);
+        }
 
-    if(filter){
-        url += '&CQL_FILTER=' + encodeURIComponent(filter);
-    }
-
-    src.setUrl(url);
-    src.refresh();
+        return null;
+    });
 }
 function applyWaterFilter(){
-    const filter = escapeCQL(elProv.value) ?
-        `province='${escapeCQL(elProv.value)}'` +
-        (elConst.value ? ` AND constituen='${escapeCQL(elConst.value)}'` : '') +
-        (elWard.value ? ` AND wardnumber='${escapeCQL(elWard.value)}'` : '')
-        : '';
-
-    let src = waterVector.getSource();
-
-    let baseUrl = `${GEOSERVER_URL}/wfs?service=WFS&version=1.1.0&request=GetFeature&typeName=${WATER_LAYER}&outputFormat=application/json&srsname=EPSG:3857`;
-
-    let url = filter ? baseUrl + '&CQL_FILTER=' + encodeURIComponent(filter) : baseUrl;
-
-    // 🔥 CRITICAL FIXES
-    src.clear();          // remove old features
-    src.setUrl(url);      
-    src.refresh();        
-};
-function applySchoolFilter(){
-    const filter = escapeCQL(elProv.value) ?
-        `province='${escapeCQL(elProv.value)}'` +
-        (elConst.value ? ` AND constituen='${escapeCQL(elConst.value)}'` : '') +
-        (elWard.value ? ` AND wardnumber='${escapeCQL(elWard.value)}'` : '')
-        : '';
-
-    let src = schoolVector.getSource();
-    let url = `${GEOSERVER_URL}/wfs?service=WFS&version=1.1.0&request=GetFeature&typeName=${SCHOOL_LAYER}&outputFormat=application/json&srsname=EPSG:3857`;
-
-    if(filter){
-        url += '&CQL_FILTER=' + encodeURIComponent(filter);
-    }
-
-    src.setUrl(url);
-    src.refresh();
+    waterVector.setStyle(f => {
+        if(!featureMatchesFilter(f)) return null;
+        return waterFunctionalStyle(f); // or waterSourceStyle
+    });
 }
+function applySchoolFilter(){
+    schoolVector.setStyle(f => {
+        if(!featureMatchesFilter(f)) return null;
 
+        if(btnEducationPrimary.classList.contains('active')){
+            return f.get('classifica') === 'Primary Schools' ? schoolPieStyle(f) : null;
+        }
+
+        if(btnEducationSecondary.classList.contains('active')){
+            return f.get('classifica') === 'High Schools' ? schoolPieStyle(f) : null;
+        }
+
+        return null;
+    });
+}
+function applyHealthFilter(){
+    healthVector.setStyle(f => {
+        if(!featureMatchesFilter(f)) return null;
+        return healthFacilitiesStyle(f);
+    });
+
+    bufferVector.setStyle(f => {
+        if(!featureMatchesFilter(f)) return null;
+        return new ol.style.Style({
+            fill: new ol.style.Fill({color:'rgba(102,194,165,0.4)'}),
+            stroke: new ol.style.Stroke({color:'#555', width:1})
+        });
+    });
+}
