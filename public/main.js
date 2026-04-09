@@ -1,15 +1,14 @@
-
 // ---------------- MAP ----------------
-const wmsSource = new ol.source.TileWMS({
-    url: `${GEOSERVER_URL}/wms`,
-    params: { LAYERS: WORKSPACE_LAYER, TILED: true }
-});
-
 const map = new ol.Map({
     target: 'map',
-    layers: [new ol.layer.Tile({ source: wmsSource })],
+    layers: [
+        // optional basemap (recommended)
+        new ol.layer.Tile({
+            source: new ol.source.OSM()
+        })
+    ],
     view: new ol.View({
-        center: ol.proj.fromLonLat([27.5,-18.5]),
+        center: ol.proj.fromLonLat([27.5, -18.5]),
         zoom: 7
     })
 });
