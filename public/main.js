@@ -595,51 +595,80 @@ function roadSurfaceStyle(f){
     });
 }
 // ---------------- APPLY HEALTH TAB ----------------
-function applyHealthTab(tab){
-    // hide all layers and legends first
+function applyHealthTab(tab) {
+    // ---------------- RESET VISIBILITY ----------------
     healthVector.setVisible(false);
     bufferVector.setVisible(false);
     roadsVector.setVisible(false);
     settlementsVector.setVisible(false);
-    healthLegendFacilities.style.display='none';
-    healthLegendService.style.display='none';
-    healthLegendDeficit.style.display='none';
 
-    const filter = escapeCQL(elProv.value) ? ...
+    healthLegendFacilities.style.display = 'none';
+    healthLegendService.style.display = 'none';
+    healthLegendDeficit.style.display = 'none';
 
-    // update sources with filter
-    applyHealthFilter();
+    // ---------------- BUILD FILTER ----------------
+    const filter = escapeCQL(elProv.value)
+        ? `province='${escapeCQL(elProv.value)}'` +
+          (elConst.value ? ` AND constituen='${escapeCQL(elConst.value)}'` : '') +
+          (elWard.value ? ` AND wardnumber='${escapeCQL(elWard.value)}'` : '')
+        : '';
 
-    });
-}
+    // Apply filter function to health features
+    const filterFunction = f => {
+        if (!filter) return true; // no filter = show all
+        return featureMatchesFilter(f); // your existing helper
+    };
 
-    if(tab==='facilities'){
+    // ---------------- SWITCH TAB ----------------
+    if (tab === 'facilities') {
         healthVector.setVisible(true);
         settlementsVector.setVisible(true);
-        healthVector.setStyle(f=>healthFacilitiesStyle(f));
-        settlementsVector.setStyle(settlementsStyle)
-        healthLegendFacilities.style.display='block';
-    } else if(tab==='service'){
+        healthVector.setStyle(f => filterFunction(f) ? healthFacilitiesStyle(f) : null);
+        settlementsVector.setStyle(f => filterFunction(f) ? settlementsStyle(f) : null);
+        healthLegendFacilities.style.display = 'block';
+    } else if (tab === 'service') {
         healthVector.setVisible(true);
         bufferVector.setVisible(true);
         settlementsVector.setVisible(true);
-        healthVector.setStyle(f=>new ol.style.Style({image: new ol.style.Circle({radius:6, fill:new ol.style.Fill({color:'#3182bd'})})}));
-        bufferVector.setStyle(new ol.style.Style({fill: new ol.style.Fill({color:'rgba(102,194,165,0.4)'}), stroke: new ol.style.Stroke({color:'#555', width:1})}));
-        settlementsVector.setStyle(settlementsStyle)
-        healthLegendService.style.display='block';
-    } else if(tab==='deficit'){
+
+        healthVector.setStyle(f => filterFunction(f) ? new ol.style.Style({
+            image: new ol.style.Circle({
+                radius: 6,
+                fill: new ol.style.Fill({ color: '#3182bd' })
+            })
+        }) : null);
+
+        bufferVector.setStyle(f => filterFunction(f) ? new ol.style.Style({
+            fill: new ol.style.Fill({ color: 'rgba(102,194,165,0.4)' }),
+            stroke: new ol.style.Stroke({ color: '#555', width: 1 })
+        }) : null);
+
+        settlementsVector.setStyle(f => filterFunction(f) ? settlementsStyle(f) : null);
+        healthLegendService.style.display = 'block';
+    } else if (tab === 'deficit') {
         healthVector.setVisible(true);
         bufferVector.setVisible(true);
         settlementsVector.setVisible(true);
         roadsVector.setVisible(true);
-        healthVector.setStyle(f=>new ol.style.Style({image: new ol.style.Circle({radius:6, fill:new ol.style.Fill({color:'#aaa'})})}));
-        bufferVector.setStyle(new ol.style.Style({fill: new ol.style.Fill({color:'rgba(255,255,255,0.6)'}), stroke:new ol.style.Stroke({color:'#aaa', width:1})}));
-        roadsVector.setStyle(roadsDeficitStyle);
-        settlementsVector.setStyle(settlementsStyle);
-        healthLegendDeficit.style.display='block';
+
+        healthVector.setStyle(f => filterFunction(f) ? new ol.style.Style({
+            image: new ol.style.Circle({
+                radius: 6,
+                fill: new ol.style.Fill({ color: '#aaa' })
+            })
+        }) : null);
+
+        bufferVector.setStyle(f => filterFunction(f) ? new ol.style.Style({
+            fill: new ol.style.Fill({ color: 'rgba(255,255,255,0.6)' }),
+            stroke: new ol.style.Stroke({ color: '#aaa', width: 1 })
+        }) : null);
+
+        roadsVector.setStyle(f => filterFunction(f) ? roadsDeficitStyle(f) : null);
+        settlementsVector.setStyle(f => filterFunction(f) ? settlementsStyle(f) : null);
+        healthLegendDeficit.style.display = 'block';
     }
 
-    // ensure healthVector is on top
+    // ---------------- ENSURE HEALTH VECTOR ON TOP ----------------
     map.removeLayer(healthVector);
     map.addLayer(healthVector);
 }
