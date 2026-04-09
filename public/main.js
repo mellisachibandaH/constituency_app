@@ -1,16 +1,85 @@
-// ---------------- MAP ----------------
+// ================== MAIN.JS TOP ==================
+
+// ---------------- MAP INITIALIZATION ----------------
 const map = new ol.Map({
     target: 'map',
     layers: [
-        // optional basemap (recommended)
-        new ol.layer.Tile({
-            source: new ol.source.OSM()
-        })
+        // Optional: Uncomment if you want OSM underneath for reference
+        // new ol.layer.Tile({
+        //     source: new ol.source.OSM()
+        // })
     ],
     view: new ol.View({
-        center: ol.proj.fromLonLat([27.5, -18.5]),
+        center: ol.proj.fromLonLat([27.5, -18.5]), // Center of Zimbabwe
         zoom: 7
     })
+});
+
+// ---------------- BASE LAYER: MATNORT_2 ----------------
+const matnortSource = new ol.source.Vector({
+    format: new ol.format.GeoJSON(),
+    url: 'data/Matnort_2.geojson' // Make sure the path is correct
+});
+
+const matnortLayer = new ol.layer.Vector({
+    source: matnortSource,
+    style: new ol.style.Style({
+        fill: new ol.style.Fill({
+            color: 'rgba(200, 200, 255, 0.6)'
+        }),
+        stroke: new ol.style.Stroke({
+            color: '#3333ff',
+            width: 1
+        })
+    })
+});
+
+// Add Matnort_2 as the first layer (your base map)
+map.addLayer(matnortLayer);
+
+// ---------------- POPUP SETUP (STEP 1) ----------------
+const popupContainer = document.createElement('div');
+popupContainer.id = 'popup';
+popupContainer.style.cssText = `
+    position: absolute;
+    background: white; 
+    border: 1px solid #333; 
+    padding: 10px; 
+    border-radius: 5px; 
+    min-width: 220px;
+    font-family: Calibri, sans-serif;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    pointer-events: auto;
+    z-index: 1000;
+`;
+document.body.appendChild(popupContainer);
+
+const popupOverlay = new ol.Overlay({
+    element: popupContainer,
+    positioning: 'bottom-center',
+    stopEvent: true,
+    offset: [0, -15]
+});
+map.addOverlay(popupOverlay);
+
+function closePopup() {
+    popupOverlay.setPosition(undefined);
+}
+
+// ---------------- OPTIONAL: MAP CLICK HANDLER FOR POPUPS ----------------
+map.on('singleclick', function(evt) {
+    const feature = map.forEachFeatureAtPixel(evt.pixel, f => f);
+    if (feature) {
+        const props = feature.getProperties();
+        popupContainer.innerHTML = `
+            <b>Province:</b> ${props.province || 'N/A'}<br>
+            <b>Constituency:</b> ${props.constituen || 'N/A'}<br>
+            <b>Ward:</b> ${props.wardnumber || 'N/A'}
+        `;
+        popupOverlay.setPosition(evt.coordinate);
+    } else {
+        closePopup();
+    }
 });
 
 // ---------------- EDUCATION POPUP ----------------
@@ -317,13 +386,46 @@ function getUniqueValues(features, field){
 }
 
 // Populate provinces after data loads
-wardVectorSource.once('change', function(){
-    if(wardVectorSource.getState() === 'ready'){
-        const features = wardVectorSource.getFeatures();
+// Populate provinces first
+wardVectorSource.once('change', () => {
+    if (wardVectorSource.getState() !== 'ready') return;
+    const features = wardVectorSource.getFeatures();
 
-        const provinces = getUniqueValues(features, 'province');
-        provinces.forEach(p => elProv.add(new Option(p,p)));
-    }
+    // Provinces
+    const provinces = getUniqueValues(features, 'province');
+    provinces.forEach(p => elProv.add(new Option(p, p)));
+
+    // On province change -> populate constituencies
+    elProv.addEventListener('change', () => {
+        // Clear lower dropdowns
+        elConst.innerHTML = '<option value="">All Constituencies</option>';
+        elWard.innerHTML = '<option value="">All Wards</option>';
+
+        const consts = features
+            .filter(f => f.get('province') === elProv.value)
+            .map(f => f.get('constituen'))
+            .filter(Boolean);
+        [...new Set(consts)].sort().forEach(c => elConst.add(new Option(c, c)));
+
+        applyHealthTab(getActiveHealthTab()); // refresh health
+    });
+
+    // On constituency change -> populate wards
+    elConst.addEventListener('change', () => {
+        elWard.innerHTML = '<option value="">All Wards</option>';
+        const wards = features
+            .filter(f => f.get('constituen') === elConst.value)
+            .map(f => f.get('wardnumber'))
+            .filter(Boolean);
+        [...new Set(wards)].sort((a,b) => a-b).forEach(w => elWard.add(new Option(w, w)));
+
+        applyHealthTab(getActiveHealthTab());
+    });
+
+    // On ward change -> refresh
+    elWard.addEventListener('change', () => {
+        applyHealthTab(getActiveHealthTab());
+    });
 });
 
 
