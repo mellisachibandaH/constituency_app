@@ -1,5 +1,5 @@
  // ================= CONFIG =================
-const GEOSERVER_URL = 'https://trails-toilet-brochures-consensus.trycloudflare.com/geoserver';
+const GEOSERVER_URL = 'https://lower-florists-commitment-came.trycloudflare.com/geoserver';
 const WORKSPACE_LAYER = 'map_application:Matnort_2';
 
 // Public Health Layers
