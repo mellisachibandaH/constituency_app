@@ -3,13 +3,13 @@
 const DATA_PATH = '/data';
 
 const GEOJSON_FILES = {
-    ward:        `${DATA_PATH}/Matnort_2.geojson`,
-    health:      `${DATA_PATH}/Health_2.geojson`,
-    healthBuffer:`${DATA_PATH}/Health_buffer.geojson`,
-    roads:       `${DATA_PATH}/lovedroads.geojson`,
-    settlements: `${DATA_PATH}/settlements_2.geojson`,
-    water:       `${DATA_PATH}/Waterpoint_3.geojson`,
-    school:      `${DATA_PATH}/school_4.geojson`,
+    ward:        `${DATA_PATH}/Matnort_2.json`,
+    health:      `${DATA_PATH}/Health_2.json`,
+    healthBuffer:`${DATA_PATH}/Health_buffer.json`,
+    roads:       `${DATA_PATH}/lovedroads.json`,
+    settlements: `${DATA_PATH}/settlements_2.json`,
+    water:       `${DATA_PATH}/Waterpoint_3.json`,
+    school:      `${DATA_PATH}/school_4.json`,
 };
 
 // ================= DATA STORE =================
