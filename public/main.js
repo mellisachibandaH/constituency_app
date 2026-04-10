@@ -4,13 +4,13 @@ const DATA_PATH = '/data';
 
 // ================= ALL RAW DATA (loaded once) =================
 const RAW = {
-    ward:         null,   // Matnort_2.json
-    health:       null,   // Health_2.json
-    healthBuffer: null,   // Health_buffer.json
-    roads:        null,   // lovedroads.json
-    settlements:  null,   // settlements_2.json
-    water:        null,   // Waterpoint_3.json
-    school:       null,   // school_4.json
+    ward:         null,   // Matnort_2.geojson
+    health:       null,   // Health_2.geojson
+    healthBuffer: null,   // Health_buffer.geojson
+    roads:        null,   // lovedroads.geojson
+    settlements:  null,   // settlements_2.geojson
+    water:        null,   // Waterpoint_3.geojson
+    school:       null,   // school_4.geojson
 };
 
 const GJ_FORMAT = new ol.format.GeoJSON();
@@ -28,9 +28,9 @@ function filteredFeatures(raw) {
     const c = elConst ? elConst.value : '';
     const w = elWard  ? elWard.value  : '';
     return GJ_FORMAT.readFeatures(raw, { featureProjection: 'EPSG:3857' }).filter(f => {
-        if (p && f.get('province')   !== p)            return false;
-        if (c && f.get('constituen') !== c)            return false;
-        if (w && String(f.get('wardnumber')) !== String(w)) return false;
+        if (p && f.get('Province')   !== p)            return false;
+        if (c && f.get('Constituen') !== c)            return false;
+        if (w && String(f.get('Wardnumber')) !== String(w)) return false;
         return true;
     });
 }
@@ -179,17 +179,10 @@ map.addLayer(schoolVector);
 // ---------------- STYLES ----------------
 function wardLabelStyle(f) {
     return new ol.style.Style({
-        fill: new ol.style.Fill({
-            color: 'rgba(0,0,0,0.05)' // VERY LIGHT fill
-        }),
-        stroke: new ol.style.Stroke({
-            color: '#333',
-            width: 1
-        }),
         text: new ol.style.Text({
-            text: String(f.get('wardnumber') || ''),
-            font: 'bold 14px Calibri',
-            fill: new ol.style.Fill({ color: '#000' }),
+            text:   String(f.get('Wardnumber') || ''),
+            font:   'bold 14px Calibri',
+            fill:   new ol.style.Fill({ color: '#000' }),
             stroke: new ol.style.Stroke({ color: '#fff', width: 2 })
         })
     });
@@ -400,15 +393,15 @@ function roadSurfaceStyle(f) {
 // Overview ward boundary style (replaces WMS tile layer)
 function overviewStyle(f) {
     return new ol.style.Style({
-        fill: new ol.style.Fill({ color: 'rgba(150,150,150,0.4)' }),
-        stroke: new ol.style.Stroke({ color: '#222', width: 1.5 }),
+        fill:   new ol.style.Fill({ color: 'rgba(200,200,200,0.3)' }),
+        stroke: new ol.style.Stroke({ color: '#555', width: 1 }),
         text:   wardLabelStyle(f).getText()
     });
 }
 
 // ---------------- DROPDOWNS ----------------
 const elProv  = document.getElementById('select-province');
-const elConst = document.getElementById('select-constituency');
+const elConst = document.getElementById('select-Constituency');
 const elWard  = document.getElementById('select-ward');
 
 function escapeCQL(str) { return str ? str.replace(/'/g, "''") : ''; }
@@ -451,7 +444,7 @@ function applyHealthFilter() {
 function populateProvinces() {
     if (!RAW.ward) return;
     const vals = RAW.ward.features
-        .map(f => f.properties.province)
+        .map(f => f.properties.Province)
         .filter(v => v != null);
     const unique = [...new Set(vals)].sort();
     unique.forEach(p => elProv.add(new Option(p, p)));
@@ -469,7 +462,7 @@ elProv.addEventListener('change', async () => {
         elConst.innerHTML = '<option value="">Select Constituency</option>';
         elWard.innerHTML  = '<option value="">Select Ward</option>';
         document.getElementById('res-province').innerText     = 'N/A';
-        document.getElementById('res-constituency').innerText = 'N/A';
+        document.getElementById('res-Constituency').innerText = 'N/A';
         document.getElementById('res-ward').innerText         = 'N/A';
         updatePopulationStats();
         updateWelfareStats();
@@ -481,11 +474,11 @@ elProv.addEventListener('change', async () => {
 
     document.getElementById('res-province').innerText = elProv.value;
 
-    // Populate constituencies from raw data
+    // Populate Constituencies from raw data
     const consts = [...new Set(
         RAW.ward.features
             .filter(f => f.properties.province === elProv.value)
-            .map(f => f.properties.constituen)
+            .map(f => f.properties.Constituen)
             .filter(v => v != null)
     )].sort();
 
@@ -496,7 +489,7 @@ elProv.addEventListener('change', async () => {
     elWard.disabled  = true;
     elWard.innerHTML = '<option value="">Select Ward</option>';
 
-    document.getElementById('res-constituency').innerText = 'N/A';
+    document.getElementById('res-Constituency').innerText = 'N/A';
     document.getElementById('res-ward').innerText         = 'N/A';
 
     updatePopulationStats();
@@ -513,14 +506,14 @@ elConst.addEventListener('change', async () => {
 
     applyWardFilter();
 
-    document.getElementById('res-constituency').innerText = elConst.value;
+    document.getElementById('res-Constituency').innerText = elConst.value;
     document.getElementById('display-title').innerText    = `${elConst.value} Overview`;
 
     // Populate wards from raw data
     const wards = [...new Set(
         RAW.ward.features
-            .filter(f => f.properties.province === elProv.value && f.properties.constituen === elConst.value)
-            .map(f => f.properties.wardnumber)
+            .filter(f => f.properties.province === elProv.value && f.properties.Constituen === elConst.value)
+            .map(f => f.properties.Wardnumber)
             .filter(v => v != null)
     )].sort((a, b) => Number(a) - Number(b));
 
@@ -910,7 +903,7 @@ function updatePopulationStats() {
     const data  = wardVectorSource.getFeatures();
     const total = data.reduce((s, f) => s + (f.get('total_popu') || 0), 0);
     document.getElementById('pop-province').innerText     = elProv.value  || 'N/A';
-    document.getElementById('pop-constituency').innerText = elConst.value || 'N/A';
+    document.getElementById('pop-Constituency').innerText = elConst.value || 'N/A';
     document.getElementById('pop-total').innerText        = total;
     updatePopulationCharts();
 }
@@ -929,7 +922,7 @@ function updatePopulationCharts() {
     const isProv  = elProv.value;
 
     if (isWard) {
-        const f = features.find(ft => String(ft.get('wardnumber')) === String(elWard.value));
+        const f = features.find(ft => String(ft.get('Wardnumber')) === String(elWard.value));
         if (!f) return;
         labels  = ['Selected Ward'];
         m_0_14  = [f.get('m_0_14')  || 0]; f_0_14  = [f.get('f_0_14')  || 0];
@@ -937,10 +930,10 @@ function updatePopulationCharts() {
         m_65    = [f.get('m_65')    || 0]; f_65    = [f.get('f_65')    || 0];
     }
     else if (isConst) {
-        const constFeatures = features.filter(f => f.get('constituen') === elConst.value);
+        const constFeatures = features.filter(f => f.get('Constituen') === elConst.value);
         if (!constFeatures.length) return;
         constFeatures.forEach(f => {
-            labels.push('Ward ' + (f.get('wardnumber') || ''));
+            labels.push('Ward ' + (f.get('Wardnumber') || ''));
             m_0_14.push(f.get('m_0_14')  || 0); f_0_14.push(f.get('f_0_14')  || 0);
             m_15_64.push(f.get('m_15_64')|| 0); f_15_64.push(f.get('f_15_64')|| 0);
             m_65.push(f.get('m_65')      || 0); f_65.push(f.get('f_65')      || 0);
@@ -951,7 +944,7 @@ function updatePopulationCharts() {
         if (!provFeatures.length) return;
         const grouped = {};
         provFeatures.forEach(f => {
-            const cn = f.get('constituen') || 'Unknown';
+            const cn = f.get('Constituen') || 'Unknown';
             if (!grouped[cn]) grouped[cn] = { m_0_14:0,f_0_14:0,m_15_64:0,f_15_64:0,m_65:0,f_65:0 };
             grouped[cn].m_0_14  += f.get('m_0_14')  || 0;
             grouped[cn].f_0_14  += f.get('f_0_14')  || 0;
@@ -1012,7 +1005,7 @@ function updateWelfareStats() {
     const vals  = data.map(f => f.get(field) || 0);
     const avg   = vals.length ? (vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(2) : 'N/A';
     document.getElementById('wel-province').innerText     = elProv.value  || 'N/A';
-    document.getElementById('wel-constituency').innerText = elConst.value || 'N/A';
+    document.getElementById('wel-Constituency').innerText = elConst.value || 'N/A';
     document.getElementById('wel-value').innerText        = avg;
     updateWelfareChart();
 }
@@ -1030,14 +1023,14 @@ function updateWelfareChart() {
     const isConst = elConst.value;
 
     if (isWard) {
-        const f = features.find(ft => String(ft.get('wardnumber')) === String(elWard.value));
+        const f = features.find(ft => String(ft.get('Wardnumber')) === String(elWard.value));
         labels      = ['Selected Ward'];
         poorData    = [f ? f.get('poor')     || 0 : 0];
         nonPoorData = [f ? f.get('none_poor')|| 0 : 0];
     }
     else if (isConst) {
         features.forEach(f => {
-            labels.push('Ward ' + (f.get('wardnumber') || ''));
+            labels.push('Ward ' + (f.get('Wardnumber') || ''));
             poorData.push(f.get('poor')     || 0);
             nonPoorData.push(f.get('none_poor')|| 0);
         });
@@ -1045,7 +1038,7 @@ function updateWelfareChart() {
     else {
         const grouped = {};
         features.forEach(f => {
-            const cn = f.get('constituen') || 'Unknown';
+            const cn = f.get('Constituen') || 'Unknown';
             if (!grouped[cn]) grouped[cn] = { poor:0, none_poor:0 };
             grouped[cn].poor      += f.get('poor')     || 0;
             grouped[cn].none_poor += f.get('none_poor')|| 0;
@@ -1089,13 +1082,13 @@ function updateWelfareChart() {
 async function init() {
     // Load all GeoJSON files in parallel
     const files = {
-        ward:         `${DATA_PATH}/Matnort_2.json`,
-        health:       `${DATA_PATH}/Health_2.json`,
-        healthBuffer: `${DATA_PATH}/Health_buffer.json`,
-        roads:        `${DATA_PATH}/lovedroads.json`,
-        settlements:  `${DATA_PATH}/settlements_2.json`,
-        water:        `${DATA_PATH}/Waterpoint_3.json`,
-        school:       `${DATA_PATH}/school_4.json`,
+        ward:         `${DATA_PATH}/Matnort_2.geojson`,
+        health:       `${DATA_PATH}/Health_2.geojson`,
+        healthBuffer: `${DATA_PATH}/Health_buffer.geojson`,
+        roads:        `${DATA_PATH}/lovedroads.geojson`,
+        settlements:  `${DATA_PATH}/settlements_2.geojson`,
+        water:        `${DATA_PATH}/Waterpoint_3.geojson`,
+        school:       `${DATA_PATH}/school_4.geojson`,
     };
 
     await Promise.all(Object.entries(files).map(async ([key, url]) => {
