@@ -179,10 +179,17 @@ map.addLayer(schoolVector);
 // ---------------- STYLES ----------------
 function wardLabelStyle(f) {
     return new ol.style.Style({
+        fill: new ol.style.Fill({
+            color: 'rgba(0,0,0,0.05)' // VERY LIGHT fill
+        }),
+        stroke: new ol.style.Stroke({
+            color: '#333',
+            width: 1
+        }),
         text: new ol.style.Text({
-            text:   String(f.get('wardnumber') || ''),
-            font:   'bold 14px Calibri',
-            fill:   new ol.style.Fill({ color: '#000' }),
+            text: String(f.get('wardnumber') || ''),
+            font: 'bold 14px Calibri',
+            fill: new ol.style.Fill({ color: '#000' }),
             stroke: new ol.style.Stroke({ color: '#fff', width: 2 })
         })
     });
@@ -393,8 +400,8 @@ function roadSurfaceStyle(f) {
 // Overview ward boundary style (replaces WMS tile layer)
 function overviewStyle(f) {
     return new ol.style.Style({
-        fill:   new ol.style.Fill({ color: 'rgba(200,200,200,0.3)' }),
-        stroke: new ol.style.Stroke({ color: '#555', width: 1 }),
+        fill: new ol.style.Fill({ color: 'rgba(150,150,150,0.4)' }),
+        stroke: new ol.style.Stroke({ color: '#222', width: 1.5 }),
         text:   wardLabelStyle(f).getText()
     });
 }
