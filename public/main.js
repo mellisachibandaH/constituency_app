@@ -1,6 +1,6 @@
 // ================= CONFIG =================
 // Place your GeoJSON files in a /data/ folder alongside this script
-const DATA_PATH = './data';
+const DATA_PATH = '/data';
 
 const GEOJSON_FILES = {
     ward:        `${DATA_PATH}/Matnort_2.geojson`,
