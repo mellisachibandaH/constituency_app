@@ -812,6 +812,14 @@ const tabRoads      = document.getElementById('tab-roads');
 const tabWater      = document.getElementById('tab-water');
 const tabEducation  = document.getElementById('tab-education');
 
+tabOverview.onclick   = () => switchTab('overview');
+tabDemography.onclick = () => switchTab('demography');
+tabWelfare.onclick    = () => switchTab('welfare');
+tabHealth.onclick     = () => switchTab('health');
+tabRoads.onclick      = () => switchTab('roads');
+tabWater.onclick      = () => switchTab('water');
+tabEducation.onclick  = () => switchTab('education');
+
 const overviewContent   = document.getElementById('overview-content');
 const demographyContent = document.getElementById('demography-content');
 const welfareContent    = document.getElementById('welfare-content');
@@ -863,7 +871,7 @@ btnRoadSurface.onclick = () => {
 };
 
 // ---- Water sub-tabs ----
-tabWater.onclick = () => switchTab('water');
+
 
 btnWaterFunctional.onclick = () => {
     btnWaterFunctional.classList.add('active'); btnWaterType.classList.remove('active');
