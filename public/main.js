@@ -119,9 +119,11 @@ map.on('singleclick', function(evt) {
 });
 
 const tabButtons = document.querySelectorAll('.tabs button');
-tabButtons.forEach(tab => {
-    tab.addEventListener('click', () => closePopup());
-});
+if (tabButtons) {
+    tabButtons.forEach(tab => {
+        tab.addEventListener('click', () => closePopup());
+    });
+}
 
 // ---------------- VECTOR SOURCES ----------------
 const wardVectorSource  = new ol.source.Vector();
@@ -712,12 +714,12 @@ function applyHealthTab(tab) {
 }
 
 // ---------------- TABS ----------------
-tabOverview.onclick   = () => switchTab('overview');
-tabDemography.onclick = () => switchTab('demography');
-tabWelfare.onclick    = () => switchTab('welfare');
-tabHealth.onclick     = () => switchTab('health');
-tabRoads.onclick      = () => switchTab('roads');
-tabEducation.onclick  = () => switchTab('education');
+if (tabOverview) tabOverview.onclick = () => switchTab('overview');
+if (tabDemography) tabDemography.onclick = () => switchTab('demography');
+if (tabWelfare) tabWelfare.onclick = () => switchTab('welfare');
+if (tabHealth) tabHealth.onclick = () => switchTab('health');
+if (tabRoads) tabRoads.onclick = () => switchTab('roads');
+if (tabEducation) tabEducation.onclick = () => switchTab('education');
 
 btnPrev.onclick = () => {
     welfareMode = 'prevalence';
@@ -1112,4 +1114,6 @@ async function init() {
     switchTab('overview');
 }
 
-init();
+document.addEventListener('DOMContentLoaded', () => {
+    init();
+});
