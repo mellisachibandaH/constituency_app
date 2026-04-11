@@ -25,9 +25,9 @@ function filteredFeatures(raw) {
     const c = elConst ? elConst.value : '';
     const w = elWard  ? elWard.value  : '';
     return GJ_FORMAT.readFeatures(raw, { featureProjection: 'EPSG:3857' }).filter(f => {
-        if (p && f.get('province')   !== p)                     return false;
-        if (c && f.get('constituen') !== c)                     return false;
-        if (w && String(f.get('wardnumber')) !== String(w))     return false;
+        if (p && f.get('province')   !== p)                 return false;
+        if (c && f.get('constituen') !== c)                 return false;
+        if (w && String(f.get('wardnumber')) !== String(w)) return false;
         return true;
     });
 }
@@ -51,17 +51,14 @@ function avg(arr) {
     if (!arr.length) return 0;
     return arr.reduce((a, b) => a + b, 0) / arr.length;
 }
-
 function max(arr) { return arr.length ? Math.max(...arr) : 0; }
 function min(arr) { return arr.length ? Math.min(...arr) : 0; }
 function sum(arr) { return arr.reduce((a, b) => a + b, 0); }
-
 function pct(part, total) {
     if (!total) return 0;
     return ((part / total) * 100).toFixed(1);
 }
 
-// Render an analytics block: summary paragraph + bullet recommendations
 function renderAnalytics(containerId, summaryHTML, recommendations) {
     const el = document.getElementById(containerId);
     if (!el) return;
@@ -77,7 +74,6 @@ function renderAnalytics(containerId, summaryHTML, recommendations) {
         </div>`;
 }
 
-// Inject analytics CSS once
 (function injectAnalyticsCSS() {
     if (document.getElementById('analytics-style')) return;
     const style = document.createElement('style');
@@ -95,14 +91,11 @@ function renderAnalytics(containerId, summaryHTML, recommendations) {
         }
         .analytics-summary { margin-bottom: 10px; color: #222; }
         .analytics-summary b { color: #1a1a1a; }
-        .analytics-highlight-good  { color: #1a7a3a; font-weight: bold; }
-        .analytics-highlight-warn  { color: #b85c00; font-weight: bold; }
-        .analytics-highlight-bad   { color: #c0392b; font-weight: bold; }
+        .analytics-highlight-good { color: #1a7a3a; font-weight: bold; }
+        .analytics-highlight-warn { color: #b85c00; font-weight: bold; }
+        .analytics-highlight-bad  { color: #c0392b; font-weight: bold; }
         .analytics-recommendations { margin-top: 8px; }
-        .analytics-recommendations ul {
-            margin: 6px 0 0 0;
-            padding-left: 18px;
-        }
+        .analytics-recommendations ul { margin: 6px 0 0 0; padding-left: 18px; }
         .analytics-recommendations li { margin-bottom: 4px; color: #333; }
     `;
     document.head.appendChild(style);
@@ -128,22 +121,20 @@ function updateOverviewAnalytics() {
         renderAnalytics(containerId, `<p>Select a province, constituency or ward to see an overview summary.</p>`, []);
         return;
     }
-
-    const totalPop  = sum(features.map(f => f.get('total_popu') || 0));
-    const numWards  = features.length;
-    const avgPop    = (totalPop / numWards).toFixed(0);
-    const poorPrev  = features.map(f => f.get('poverty_pr') || 0);
+    const totalPop   = sum(features.map(f => f.get('total_popu') || 0));
+    const numWards   = features.length;
+    const avgPop     = (totalPop / numWards).toFixed(0);
+    const poorPrev   = features.map(f => f.get('poverty_pr') || 0);
     const avgPoverty = avg(poorPrev).toFixed(1);
     const maxPovWard = features.reduce((a, b) => (b.get('poverty_pr') || 0) > (a.get('poverty_pr') || 0) ? b : a);
     const maxPovName = `Ward ${maxPovWard.get('wardnumber') || '?'}`;
     const maxPovVal  = (maxPovWard.get('poverty_pr') || 0).toFixed(1);
-
-    const povClass = flag(parseFloat(avgPoverty), 25, 45);
+    const povClass   = flag(parseFloat(avgPoverty), 25, 45);
 
     const summary = `
-        <p><b>${loc}</b> comprises <b>${numWards} ward(s)</b> with a total population of 
+        <p><b>${loc}</b> comprises <b>${numWards} ward(s)</b> with a total population of
         <b>${totalPop.toLocaleString()}</b> (average <b>${parseInt(avgPop).toLocaleString()}</b> per ward).
-        The average poverty prevalence across all wards is 
+        The average poverty prevalence across all wards is
         <span class="${povClass}">${avgPoverty}%</span>.
         ${numWards > 1 ? `The ward with the highest poverty burden is <b>${maxPovName}</b> at <span class="analytics-highlight-bad">${maxPovVal}%</span>.` : ''}
         </p>`;
@@ -153,7 +144,6 @@ function updateOverviewAnalytics() {
     else if (parseFloat(avgPoverty) > 25) recs.push(`Poverty levels in ${loc} are moderate. Strengthen existing safety nets and monitor trends closely.`);
     if (numWards > 1) recs.push(`Focus resources on ${maxPovName}, which carries the highest poverty burden in this area.`);
     if (totalPop > 10000) recs.push(`With a population exceeding ${totalPop.toLocaleString()}, ensure service delivery infrastructure keeps pace with population size.`);
-
     renderAnalytics(containerId, summary, recs);
 }
 
@@ -164,12 +154,12 @@ function updateDemographyAnalytics() {
     const containerId = 'analytics-demography';
     if (!features.length) { renderAnalytics(containerId, '<p>No data available for the selected area.</p>', []); return; }
 
-    const totalPop = sum(features.map(f => f.get('total_popu') || 0));
-    const total014 = sum(features.map(f => (f.get('m_0_14') || 0) + (f.get('f_0_14') || 0)));
-    const total1564= sum(features.map(f => (f.get('m_15_64')|| 0) + (f.get('f_15_64')|| 0)));
-    const total65  = sum(features.map(f => (f.get('m_65')   || 0) + (f.get('f_65')   || 0)));
-    const totalMale= sum(features.map(f => (f.get('m_0_14') || 0) + (f.get('m_15_64')|| 0) + (f.get('m_65') || 0)));
-    const totalFem = totalPop - totalMale;
+    const totalPop  = sum(features.map(f => f.get('total_popu') || 0));
+    const total014  = sum(features.map(f => (f.get('m_0_14')  || 0) + (f.get('f_0_14')  || 0)));
+    const total1564 = sum(features.map(f => (f.get('m_15_64') || 0) + (f.get('f_15_64') || 0)));
+    const total65   = sum(features.map(f => (f.get('m_65')    || 0) + (f.get('f_65')    || 0)));
+    const totalMale = sum(features.map(f => (f.get('m_0_14')  || 0) + (f.get('m_15_64') || 0) + (f.get('m_65') || 0)));
+    const totalFem  = totalPop - totalMale;
 
     const pct014  = pct(total014,  totalPop);
     const pct1564 = pct(total1564, totalPop);
@@ -177,11 +167,11 @@ function updateDemographyAnalytics() {
     const pctMale = pct(totalMale, totalPop);
     const pctFem  = pct(totalFem,  totalPop);
 
-    const youthClass  = parseFloat(pct014)  > 45 ? 'analytics-highlight-warn' : 'analytics-highlight-good';
-    const elderClass  = parseFloat(pct65)   > 10 ? 'analytics-highlight-warn' : 'analytics-highlight-good';
+    const youthClass = parseFloat(pct014) > 45 ? 'analytics-highlight-warn' : 'analytics-highlight-good';
+    const elderClass = parseFloat(pct65)  > 10 ? 'analytics-highlight-warn' : 'analytics-highlight-good';
 
     const summary = `
-        <p><b>${loc}</b> has a total population of <b>${totalPop.toLocaleString()}</b> 
+        <p><b>${loc}</b> has a total population of <b>${totalPop.toLocaleString()}</b>
         (${pctMale}% male, ${pctFem}% female).
         Children aged 0–14 make up <span class="${youthClass}">${pct014}%</span> of the population,
         the working-age group (15–64) accounts for <b>${pct1564}%</b>,
@@ -191,11 +181,10 @@ function updateDemographyAnalytics() {
         </p>`;
 
     const recs = [];
-    if (parseFloat(pct014) > 45) recs.push(`High youth proportion (${pct014}%) — invest in schools, early childhood development centres and paediatric health services.`);
-    if (parseFloat(pct65) > 10)  recs.push(`Ageing population segment (${pct65}%) — expand geriatric health services and social pension coverage.`);
-    if (parseFloat(pctFem) > 52) recs.push(`Female majority — ensure gender-responsive programming in health, education and economic empowerment.`);
+    if (parseFloat(pct014)  > 45) recs.push(`High youth proportion (${pct014}%) — invest in schools, early childhood development centres and paediatric health services.`);
+    if (parseFloat(pct65)   > 10) recs.push(`Ageing population segment (${pct65}%) — expand geriatric health services and social pension coverage.`);
+    if (parseFloat(pctFem)  > 52) recs.push(`Female majority — ensure gender-responsive programming in health, education and economic empowerment.`);
     if (parseFloat(pct1564) > 55) recs.push(`Large working-age cohort — prioritise vocational training, job creation and entrepreneurship support.`);
-
     renderAnalytics(containerId, summary, recs);
 }
 
@@ -206,13 +195,13 @@ function updateWelfareAnalytics() {
     const containerId = 'analytics-welfare';
     if (!features.length) { renderAnalytics(containerId, '<p>No data available for the selected area.</p>', []); return; }
 
-    const prevVals = features.map(f => f.get('poverty_pr') || 0);
-    const gapVals  = features.map(f => f.get('poverty_ga') || 0);
-    const poorVals = features.map(f => f.get('poor')       || 0);
-    const nonPoorVals = features.map(f => f.get('none_poor') || 0);
+    const prevVals    = features.map(f => f.get('poverty_pr') || 0);
+    const gapVals     = features.map(f => f.get('poverty_ga') || 0);
+    const poorVals    = features.map(f => f.get('poor')       || 0);
+    const nonPoorVals = features.map(f => f.get('none_poor')  || 0);
 
-    const avgPrev  = avg(prevVals).toFixed(1);
-    const avgGap   = avg(gapVals).toFixed(1);
+    const avgPrev      = avg(prevVals).toFixed(1);
+    const avgGap       = avg(gapVals).toFixed(1);
     const totalPoor    = sum(poorVals);
     const totalNonPoor = sum(nonPoorVals);
     const totalPop     = totalPoor + totalNonPoor;
@@ -222,19 +211,19 @@ function updateWelfareAnalytics() {
     const bestWard  = features.reduce((a, b) => (b.get('poverty_pr') || 0) < (a.get('poverty_pr') || 0) ? b : a);
 
     const prevClass = flag(parseFloat(avgPrev), 25, 45);
-    const gapClass  = flag(parseFloat(avgGap),  5, 8);
+    const gapClass  = flag(parseFloat(avgGap),  5,  8);
 
     const summary = `
-        <p>In <b>${loc}</b>, approximately <span class="${prevClass}">${pctPoor}%</span> of the population 
+        <p>In <b>${loc}</b>, approximately <span class="${prevClass}">${pctPoor}%</span> of the population
         (<b>${totalPoor.toLocaleString()}</b> people) live below the poverty line.
-        The average poverty prevalence is <span class="${prevClass}">${avgPrev}%</span> 
-        and the poverty gap index stands at <span class="${gapClass}">${avgGap}</span> — 
+        The average poverty prevalence is <span class="${prevClass}">${avgPrev}%</span>
+        and the poverty gap index stands at <span class="${gapClass}">${avgGap}</span> —
         ${parseFloat(avgGap) > 8 ? 'indicating that poor households are <b>severely below</b> the poverty line, not just marginally poor.' :
           parseFloat(avgGap) > 5 ? 'indicating a <b>moderate depth</b> of poverty among affected households.' :
           'suggesting poor households are <b>relatively close</b> to the poverty line.'}
-        ${features.length > 1 ? `The most deprived ward is <b>Ward ${worstWard.get('wardnumber') || '?'}</b> 
-        (${(worstWard.get('poverty_pr') || 0).toFixed(1)}% prevalence) while 
-        <b>Ward ${bestWard.get('wardnumber') || '?'}</b> performs best 
+        ${features.length > 1 ? `The most deprived ward is <b>Ward ${worstWard.get('wardnumber') || '?'}</b>
+        (${(worstWard.get('poverty_pr') || 0).toFixed(1)}% prevalence) while
+        <b>Ward ${bestWard.get('wardnumber') || '?'}</b> performs best
         (${(bestWard.get('poverty_pr') || 0).toFixed(1)}%).` : ''}
         </p>`;
 
@@ -244,7 +233,6 @@ function updateWelfareAnalytics() {
     if (parseFloat(avgGap) > 8) recs.push(`High poverty gap index (${avgGap}) indicates extreme deprivation — increase the value of social transfers to lift households further above the poverty line.`);
     if (features.length > 1) recs.push(`Target resources to Ward ${worstWard.get('wardnumber') || '?'} which has the highest poverty burden in this area.`);
     recs.push(`Integrate poverty data with health, education and water access data to identify households facing multiple deprivations simultaneously.`);
-
     renderAnalytics(containerId, summary, recs);
 }
 
@@ -252,7 +240,6 @@ function updateWelfareAnalytics() {
 function updateHealthAnalytics() {
     const loc = getLocationLabel();
     const containerId = 'analytics-health';
-
     const healthFeatures = healthVectorSource.getFeatures();
     const settFeatures   = settlementsVectorSource.getFeatures();
 
@@ -266,14 +253,13 @@ function updateHealthAnalytics() {
     const clinics    = healthFeatures.filter(f => f.get('typeoffaci') === 'Clinic').length;
     const pharmacies = healthFeatures.filter(f => f.get('typeoffaci') === 'Pharmacy').length;
     const numSettlements = settFeatures.length;
-
     const ratio = numSettlements > 0 ? (numSettlements / total).toFixed(1) : 'N/A';
     const facilityClass = total < 3 ? 'analytics-highlight-bad' : total < 8 ? 'analytics-highlight-warn' : 'analytics-highlight-good';
 
     const summary = `
-        <p><b>${loc}</b> has <span class="${facilityClass}">${total} health facilit${total === 1 ? 'y' : 'ies'}</span> 
+        <p><b>${loc}</b> has <span class="${facilityClass}">${total} health facilit${total === 1 ? 'y' : 'ies'}</span>
         — comprising <b>${hospitals}</b> hospital(s), <b>${clinics}</b> clinic(s) and <b>${pharmacies}</b> pharmac${pharmacies === 1 ? 'y' : 'ies'}.
-        ${numSettlements > 0 ? `With <b>${numSettlements}</b> settlement(s) in the area, 
+        ${numSettlements > 0 ? `With <b>${numSettlements}</b> settlement(s) in the area,
         there is roughly <b>1 facility per ${ratio} settlement(s)</b>.` : ''}
         ${total < 3 ? ' This represents a <b>critically low</b> facility-to-population ratio.' :
           total < 8 ? ' Coverage is <b>moderate</b> but may not meet demand during peak periods.' :
@@ -281,12 +267,11 @@ function updateHealthAnalytics() {
         </p>`;
 
     const recs = [];
-    if (total < 3)       recs.push(`Urgently establish additional health posts or mobile clinic services to close critical coverage gaps.`);
-    if (hospitals === 0) recs.push(`No hospital recorded — ensure referral pathways to the nearest hospital are clearly defined and accessible.`);
-    if (pharmacies === 0)recs.push(`No pharmacy recorded — explore community medicine distribution points or depot systems.`);
-    if (clinics < 2)     recs.push(`Expand primary care clinic infrastructure to bring services closer to communities.`);
+    if (total < 3)        recs.push(`Urgently establish additional health posts or mobile clinic services to close critical coverage gaps.`);
+    if (hospitals === 0)  recs.push(`No hospital recorded — ensure referral pathways to the nearest hospital are clearly defined and accessible.`);
+    if (pharmacies === 0) recs.push(`No pharmacy recorded — explore community medicine distribution points or depot systems.`);
+    if (clinics < 2)      recs.push(`Expand primary care clinic infrastructure to bring services closer to communities.`);
     recs.push(`Use the service zone map to identify settlements falling outside the 5km catchment and prioritise those for outreach programmes.`);
-
     renderAnalytics(containerId, summary, recs);
 }
 
@@ -315,20 +300,19 @@ function updateRoadsAnalytics() {
 
     const summary = `
         <p>The road network in <b>${loc}</b> consists of <b>${total}</b> road segment(s).
-        <span class="${surfClass}">${pctPaved}%</span> of roads are paved and 
+        <span class="${surfClass}">${pctPaved}%</span> of roads are paved and
         <b>${pct(unpaved, total)}%</b> are unpaved/gravel.
-        In terms of structural condition, <span class="${condClass}">${pctPoor}%</span> of roads 
+        In terms of structural condition, <span class="${condClass}">${pctPoor}%</span> of roads
         are rated <i>poor to very poor</i>, while <b>${pct(fair, total)}%</b> are in fair or better condition.
         ${parseFloat(pctPoor) > 50 ? ' The majority of roads are in poor condition, which will significantly impede access to services.' : ''}
         </p>`;
 
     const recs = [];
-    if (parseFloat(pctPaved) < 20)  recs.push(`Only ${pctPaved}% of roads are paved — prioritise tarring of key access routes connecting settlements to health, education and market centres.`);
-    if (parseFloat(pctPoor) > 50)   recs.push(`Over half the road network is in poor condition — conduct a road condition survey and develop a rehabilitation priority list.`);
-    if (parseFloat(pctPoor) > 25)   recs.push(`Significant road degradation detected — schedule routine maintenance (grading, pothole patching) before the rainy season.`);
-    if (unpaved > paved)            recs.push(`High proportion of unpaved roads — consider gravel re-sheeting and drainage improvements as a cost-effective interim measure.`);
+    if (parseFloat(pctPaved) < 20) recs.push(`Only ${pctPaved}% of roads are paved — prioritise tarring of key access routes connecting settlements to health, education and market centres.`);
+    if (parseFloat(pctPoor)  > 50) recs.push(`Over half the road network is in poor condition — conduct a road condition survey and develop a rehabilitation priority list.`);
+    if (parseFloat(pctPoor)  > 25) recs.push(`Significant road degradation detected — schedule routine maintenance (grading, pothole patching) before the rainy season.`);
+    if (unpaved > paved)           recs.push(`High proportion of unpaved roads — consider gravel re-sheeting and drainage improvements as a cost-effective interim measure.`);
     recs.push(`Cross-reference poor road segments with health facility locations to identify access-deficit corridors requiring urgent attention.`);
-
     renderAnalytics(containerId, summary, recs);
 }
 
@@ -343,46 +327,43 @@ function updateWaterAnalytics() {
         return;
     }
 
-    const total       = waterFeatures.length;
-    const fully       = waterFeatures.filter(f => f.get('functional') === 'Fully Functional').length;
-    const partial     = waterFeatures.filter(f => f.get('functional') === 'Partially Functional').length;
-    const collapsed   = waterFeatures.filter(f => f.get('functional') === 'Collapsed/Abandoned').length;
-    const naStatus    = waterFeatures.filter(f => f.get('functional') === 'N/A').length;
-    const nonFunc     = total - fully - partial;
+    const total        = waterFeatures.length;
+    const fully        = waterFeatures.filter(f => f.get('functional') === 'Fully Functional').length;
+    const partial      = waterFeatures.filter(f => f.get('functional') === 'Partially Functional').length;
+    const collapsed    = waterFeatures.filter(f => f.get('functional') === 'Collapsed/Abandoned').length;
+    const naStatus     = waterFeatures.filter(f => f.get('functional') === 'N/A').length;
+    const boreholes    = waterFeatures.filter(f => f.get('type') === 'Borehole').length;
+    const deepWells    = waterFeatures.filter(f => f.get('type') === 'Deep Well').length;
+    const shallowWells = waterFeatures.filter(f => f.get('type') === 'Shallow Well').length;
+    const dams         = waterFeatures.filter(f => f.get('type') === 'Dam').length;
+    const springs      = waterFeatures.filter(f => f.get('type') === 'Spring').length;
 
-    const boreholes   = waterFeatures.filter(f => f.get('type') === 'Borehole').length;
-    const deepWells   = waterFeatures.filter(f => f.get('type') === 'Deep Well').length;
-    const shallowWells= waterFeatures.filter(f => f.get('type') === 'Shallow Well').length;
-    const dams        = waterFeatures.filter(f => f.get('type') === 'Dam').length;
-    const springs     = waterFeatures.filter(f => f.get('type') === 'Spring').length;
+    const pctFully    = pct(fully,     total);
+    const pctPartial  = pct(partial,   total);
+    const pctCollapse = pct(collapsed, total);
 
-    const pctFully   = pct(fully,    total);
-    const pctPartial = pct(partial,  total);
-    const pctCollapse= pct(collapsed,total);
-
-    const funcClass  = parseFloat(pctFully) > 70 ? 'analytics-highlight-good' : parseFloat(pctFully) > 40 ? 'analytics-highlight-warn' : 'analytics-highlight-bad';
-    const collapseClass = parseFloat(pctCollapse) > 20 ? 'analytics-highlight-bad' : parseFloat(pctCollapse) > 10 ? 'analytics-highlight-warn' : 'analytics-highlight-good';
+    const funcClass     = parseFloat(pctFully)    > 70 ? 'analytics-highlight-good' : parseFloat(pctFully)    > 40 ? 'analytics-highlight-warn' : 'analytics-highlight-bad';
+    const collapseClass = parseFloat(pctCollapse) > 20 ? 'analytics-highlight-bad'  : parseFloat(pctCollapse) > 10 ? 'analytics-highlight-warn' : 'analytics-highlight-good';
 
     const summary = `
         <p><b>${loc}</b> has <b>${total}</b> water point(s).
-        <span class="${funcClass}">${pctFully}%</span> are fully functional, 
-        <b>${pctPartial}%</b> partially functional, and 
+        <span class="${funcClass}">${pctFully}%</span> are fully functional,
+        <b>${pctPartial}%</b> partially functional, and
         <span class="${collapseClass}">${pctCollapse}%</span> are collapsed or abandoned.
         ${naStatus > 0 ? `Status is unknown for <b>${naStatus}</b> point(s).` : ''}
-        By source type, the area relies on: boreholes (<b>${boreholes}</b>), 
-        deep wells (<b>${deepWells}</b>), shallow wells (<b>${shallowWells}</b>), 
+        By source type, the area relies on: boreholes (<b>${boreholes}</b>),
+        deep wells (<b>${deepWells}</b>), shallow wells (<b>${shallowWells}</b>),
         dams (<b>${dams}</b>) and springs (<b>${springs}</b>).
         ${shallowWells > boreholes ? ' <span class="analytics-highlight-warn">Shallow wells dominate</span> — these are more vulnerable to contamination and seasonal drying.' : ''}
         </p>`;
 
     const recs = [];
-    if (parseFloat(pctFully) < 40)   recs.push(`Critically low functional rate (${pctFully}%) — conduct emergency repairs and rehabilitation of non-functional points.`);
+    if (parseFloat(pctFully) < 40)    recs.push(`Critically low functional rate (${pctFully}%) — conduct emergency repairs and rehabilitation of non-functional points.`);
     else if (parseFloat(pctFully) < 70) recs.push(`Moderate functionality rate — schedule maintenance for the ${partial} partially functional point(s) before they fail completely.`);
-    if (collapsed > 0)               recs.push(`${collapsed} collapsed/abandoned point(s) identified — assess feasibility for rehabilitation to restore capacity.`);
-    if (shallowWells > boreholes)    recs.push(`High reliance on shallow wells — prioritise borehole drilling to improve water quality and year-round reliability.`);
-    if (naStatus > 0)                recs.push(`${naStatus} water point(s) have unknown status — conduct a field verification exercise to update the dataset.`);
+    if (collapsed > 0)                recs.push(`${collapsed} collapsed/abandoned point(s) identified — assess feasibility for rehabilitation to restore capacity.`);
+    if (shallowWells > boreholes)     recs.push(`High reliance on shallow wells — prioritise borehole drilling to improve water quality and year-round reliability.`);
+    if (naStatus > 0)                 recs.push(`${naStatus} water point(s) have unknown status — conduct a field verification exercise to update the dataset.`);
     recs.push(`Establish a community-based water point management system (CWPMS) to ensure routine maintenance and early fault reporting.`);
-
     renderAnalytics(containerId, summary, recs);
 }
 
@@ -399,26 +380,25 @@ function updateEducationAnalytics(level) {
         return;
     }
 
-    const total      = schoolFeatures.length;
-    const totalMale  = sum(schoolFeatures.map(f => f.get('enrol_male') || 0));
-    const totalFem   = sum(schoolFeatures.map(f => f.get('enrol_fema') || 0));
-    const totalPupils= sum(schoolFeatures.map(f => f.get('total_pupi') || 0));
-    const totalTeach = sum(schoolFeatures.map(f => f.get('teachers')   || 0));
-    const avgRatio   = totalTeach > 0 ? (totalPupils / totalTeach).toFixed(1) : 'N/A';
-    const pctFem     = pct(totalFem, totalPupils);
-    const pctMale    = pct(totalMale, totalPupils);
+    const total       = schoolFeatures.length;
+    const totalMale   = sum(schoolFeatures.map(f => f.get('enrol_male') || 0));
+    const totalFem    = sum(schoolFeatures.map(f => f.get('enrol_fema') || 0));
+    const totalPupils = sum(schoolFeatures.map(f => f.get('total_pupi') || 0));
+    const totalTeach  = sum(schoolFeatures.map(f => f.get('teachers')   || 0));
+    const avgRatio    = totalTeach > 0 ? (totalPupils / totalTeach).toFixed(1) : 'N/A';
+    const pctFem      = pct(totalFem,  totalPupils);
+    const pctMale     = pct(totalMale, totalPupils);
 
-    const ratioNum   = parseFloat(avgRatio);
-    const ratioClass = ratioNum > 40 ? 'analytics-highlight-bad' : ratioNum > 30 ? 'analytics-highlight-warn' : 'analytics-highlight-good';
-    const genderClass= parseFloat(pctFem) < 45 ? 'analytics-highlight-warn' : 'analytics-highlight-good';
-
-    const levelLabel = level === 'primary' ? 'Primary' : 'Secondary (High)';
+    const ratioNum    = parseFloat(avgRatio);
+    const ratioClass  = ratioNum > 40 ? 'analytics-highlight-bad' : ratioNum > 30 ? 'analytics-highlight-warn' : 'analytics-highlight-good';
+    const genderClass = parseFloat(pctFem) < 45 ? 'analytics-highlight-warn' : 'analytics-highlight-good';
+    const levelLabel  = level === 'primary' ? 'Primary' : 'Secondary (High)';
 
     const summary = `
-        <p><b>${loc}</b> has <b>${total} ${levelLabel} school(s)</b> with a total enrolment of 
-        <b>${totalPupils.toLocaleString()}</b> pupils 
+        <p><b>${loc}</b> has <b>${total} ${levelLabel} school(s)</b> with a total enrolment of
+        <b>${totalPupils.toLocaleString()}</b> pupils
         (<span class="${genderClass}">${pctFem}% female</span>, ${pctMale}% male).
-        There are <b>${totalTeach}</b> teacher(s), giving an average pupil-to-teacher ratio of 
+        There are <b>${totalTeach}</b> teacher(s), giving an average pupil-to-teacher ratio of
         <span class="${ratioClass}">${avgRatio}:1</span>.
         ${ratioNum > 40 ? ' This ratio is <b>critically high</b> and will negatively impact learning outcomes.' :
           ratioNum > 30 ? ' This ratio is above the recommended 30:1 and should be addressed.' :
@@ -427,13 +407,12 @@ function updateEducationAnalytics(level) {
         </p>`;
 
     const recs = [];
-    if (ratioNum > 40)              recs.push(`Pupil-teacher ratio of ${avgRatio}:1 is critically high — urgently recruit and deploy additional teachers.`);
+    if (ratioNum > 40)             recs.push(`Pupil-teacher ratio of ${avgRatio}:1 is critically high — urgently recruit and deploy additional teachers.`);
     else if (ratioNum > 30)        recs.push(`Pupil-teacher ratio above recommended levels — prioritise teacher recruitment in the next planning cycle.`);
     if (parseFloat(pctFem) < 45)   recs.push(`Female enrolment below 45% — implement girl-friendly school programmes, sanitation facilities and community awareness campaigns.`);
-    if (total < 3)                  recs.push(`Limited number of ${levelLabel.toLowerCase()} schools — assess whether additional schools or satellite classrooms are needed to improve access.`);
+    if (total < 3)                 recs.push(`Limited number of ${levelLabel.toLowerCase()} schools — assess whether additional schools or satellite classrooms are needed to improve access.`);
     recs.push(`Conduct a school infrastructure audit to identify classrooms, WASH facilities and learning materials that require upgrading.`);
-    if (level === 'primary')        recs.push(`Track completion rates alongside enrolment to identify dropout risks and implement early interventions.`);
-
+    if (level === 'primary')       recs.push(`Track completion rates alongside enrolment to identify dropout risks and implement early interventions.`);
     renderAnalytics(containerId, summary, recs);
 }
 
@@ -452,10 +431,10 @@ const popupContainer = document.createElement('div');
 popupContainer.id = 'popup';
 popupContainer.style.cssText = `
     position: absolute;
-    background: white; 
-    border: 1px solid #333; 
-    padding: 10px; 
-    border-radius: 5px; 
+    background: white;
+    border: 1px solid #333;
+    padding: 10px;
+    border-radius: 5px;
     min-width: 220px;
     font-family: Calibri, sans-serif;
     box-shadow: 0 2px 6px rgba(0,0,0,0.3);
@@ -519,7 +498,9 @@ const roadsVectorSource       = new ol.source.Vector();
 const settlementsVectorSource = new ol.source.Vector();
 
 // ---------------- VECTOR LAYERS ----------------
-const wardLayer         = new ol.layer.Vector({ source: wardVectorSource,        style: wardLabelStyle });
+// wardLayer is always visible — it provides the base boundary on every tab.
+// Its style is swapped per tab (overviewStyle, demographyStyle, etc.)
+const wardLayer         = new ol.layer.Vector({ source: wardVectorSource,        style: overviewStyle });
 const waterVector       = new ol.layer.Vector({ source: waterVectorSource,       visible: false });
 const schoolVector      = new ol.layer.Vector({ source: schoolVectorSource,      visible: false });
 const healthVector      = new ol.layer.Vector({ source: healthVectorSource,      visible: false });
@@ -527,6 +508,7 @@ const bufferVector      = new ol.layer.Vector({ source: bufferVectorSource,     
 const roadsVector       = new ol.layer.Vector({ source: roadsVectorSource,       visible: false });
 const settlementsVector = new ol.layer.Vector({ source: settlementsVectorSource, visible: false });
 
+// Ward layer goes on first so everything else renders on top of it
 map.addLayer(wardLayer);
 map.addLayer(settlementsVector);
 map.addLayer(roadsVector);
@@ -536,6 +518,22 @@ map.addLayer(waterVector);
 map.addLayer(schoolVector);
 
 // ---------------- STYLES ----------------
+
+// overviewStyle: light grey fill + ward number label — used as the base map on ALL tabs
+function overviewStyle(f) {
+    return new ol.style.Style({
+        fill:   new ol.style.Fill({ color: 'rgba(200,200,200,0.3)' }),
+        stroke: new ol.style.Stroke({ color: '#555', width: 1 }),
+        text:   new ol.style.Text({
+            text:   String(f.get('wardnumber') || ''),
+            font:   'bold 14px Calibri',
+            fill:   new ol.style.Fill({ color: '#000' }),
+            stroke: new ol.style.Stroke({ color: '#fff', width: 2 })
+        })
+    });
+}
+
+// wardLabelStyle: labels only (no fill) — kept for internal use by demography/welfare styles
 function wardLabelStyle(f) {
     return new ol.style.Style({
         text: new ol.style.Text({
@@ -628,7 +626,7 @@ function schoolPieStyle(f) {
     const minRadius = 8, maxRadius = 20, maxEnrolment = 1000;
     const radiusScale = Math.min(maxRadius, minRadius + (total / maxEnrolment) * (maxRadius - minRadius));
     const radiusX = radiusScale, radiusY = radiusScale * 0.8;
-    const centerX = radiusX,    centerY = radiusX;
+    const centerX = radiusX, centerY = radiusX;
     const depth = radiusScale * 0.25;
     const canvasSize = radiusX * 2 + depth + 2;
     const canvas = document.createElement('canvas');
@@ -682,11 +680,17 @@ function healthFacilitiesStyle(f) {
 }
 
 function settlementsStyle() {
-    return new ol.style.Style({ fill: new ol.style.Fill({ color: '#b87f53' }), stroke: new ol.style.Stroke({ color: '#b87f53', width: 1 }) });
+    return new ol.style.Style({
+        fill:   new ol.style.Fill({ color: '#b87f53' }),
+        stroke: new ol.style.Stroke({ color: '#b87f53', width: 1 })
+    });
 }
 
 function settlementsEducationStyle() {
-    return new ol.style.Style({ fill: new ol.style.Fill({ color: '#d14b11' }), stroke: new ol.style.Stroke({ color: '#820707', width: 1 }) });
+    return new ol.style.Style({
+        fill:   new ol.style.Fill({ color: '#d14b11' }),
+        stroke: new ol.style.Stroke({ color: '#820707', width: 1 })
+    });
 }
 
 function roadsDeficitStyle(f) {
@@ -709,14 +713,6 @@ function roadSurfaceStyle(f) {
     let color = '#ba3434', width = 3;
     if (type === 'unpaved') { color = '#ebd45f'; width = 2; }
     return new ol.style.Style({ stroke: new ol.style.Stroke({ color, width }) });
-}
-
-function overviewStyle(f) {
-    return new ol.style.Style({
-        fill:   new ol.style.Fill({ color: 'rgba(200,200,200,0.3)' }),
-        stroke: new ol.style.Stroke({ color: '#555', width: 1 }),
-        text:   wardLabelStyle(f).getText()
-    });
 }
 
 // ---------------- DROPDOWNS ----------------
@@ -763,7 +759,8 @@ elProv.addEventListener('change', async () => {
     applyWardFilter();
     document.getElementById('res-province').innerText = elProv.value;
     const consts = [...new Set(
-        RAW.ward.features.filter(f => f.properties.province === elProv.value).map(f => f.properties.constituen).filter(v => v != null)
+        RAW.ward.features.filter(f => f.properties.province === elProv.value)
+            .map(f => f.properties.constituen).filter(v => v != null)
     )].sort();
     elConst.innerHTML = '<option value="">Select Constituency</option>';
     consts.forEach(c => elConst.add(new Option(c, c)));
@@ -812,12 +809,16 @@ const tabDemography = document.getElementById('tab-demography');
 const tabWelfare    = document.getElementById('tab-welfare');
 const tabHealth     = document.getElementById('tab-health');
 const tabRoads      = document.getElementById('tab-roads');
+const tabWater      = document.getElementById('tab-water');
+const tabEducation  = document.getElementById('tab-education');
 
 const overviewContent   = document.getElementById('overview-content');
 const demographyContent = document.getElementById('demography-content');
 const welfareContent    = document.getElementById('welfare-content');
 const healthContent     = document.getElementById('health-content');
 const roadsContent      = document.getElementById('roads-content');
+const waterContent      = document.getElementById('water-content');
+const educationContent  = document.getElementById('education-content');
 
 const popLegend  = document.getElementById('pop-legend');
 const prevLegend = document.getElementById('prev-legend');
@@ -833,6 +834,19 @@ const btnHealthDeficit = document.getElementById('btn-health-deficit');
 const btnRoadCondition = document.getElementById('btn-road-condition');
 const btnRoadSurface   = document.getElementById('btn-road-surface');
 
+const btnWaterFunctional    = document.getElementById('btn-water-functional');
+const btnWaterType          = document.getElementById('btn-water-type');
+const waterLegendFunctional = document.getElementById('water-legend-functional');
+const waterLegendType       = document.getElementById('water-legend-type');
+
+const btnEducationPrimary   = document.getElementById('btn-education-primary');
+const btnEducationSecondary = document.getElementById('btn-education-secondary');
+
+const healthLegendFacilities = document.getElementById('health-legend-facilities');
+const healthLegendService    = document.getElementById('health-legend-service');
+const healthLegendDeficit    = document.getElementById('health-legend-deficit');
+
+// ---- Road sub-tabs ----
 btnRoadCondition.onclick = () => {
     btnRoadCondition.classList.add('active'); btnRoadSurface.classList.remove('active');
     roadsVector.setStyle(roadConditionStyle);
@@ -840,7 +854,6 @@ btnRoadCondition.onclick = () => {
     document.getElementById('roads-legend-surface').style.display   = 'none';
     updateRoadsAnalytics();
 };
-
 btnRoadSurface.onclick = () => {
     btnRoadSurface.classList.add('active'); btnRoadCondition.classList.remove('active');
     roadsVector.setStyle(roadSurfaceStyle);
@@ -849,13 +862,7 @@ btnRoadSurface.onclick = () => {
     updateRoadsAnalytics();
 };
 
-const tabWater           = document.getElementById('tab-water');
-const waterContent       = document.getElementById('water-content');
-const btnWaterFunctional = document.getElementById('btn-water-functional');
-const btnWaterType       = document.getElementById('btn-water-type');
-const waterLegendFunctional = document.getElementById('water-legend-functional');
-const waterLegendType       = document.getElementById('water-legend-type');
-
+// ---- Water sub-tabs ----
 tabWater.onclick = () => switchTab('water');
 
 btnWaterFunctional.onclick = () => {
@@ -865,7 +872,6 @@ btnWaterFunctional.onclick = () => {
     waterLegendFunctional.style.display = 'block'; waterLegendType.style.display = 'none';
     updateWaterAnalytics();
 };
-
 btnWaterType.onclick = () => {
     btnWaterType.classList.add('active'); btnWaterFunctional.classList.remove('active');
     applyWaterFilter();
@@ -874,12 +880,7 @@ btnWaterType.onclick = () => {
     updateWaterAnalytics();
 };
 
-// ---------------- EDUCATION ----------------
-const tabEducation        = document.getElementById('tab-education');
-const educationContent    = document.getElementById('education-content');
-const btnEducationPrimary   = document.getElementById('btn-education-primary');
-const btnEducationSecondary = document.getElementById('btn-education-secondary');
-
+// ---- Education sub-tabs ----
 btnEducationPrimary.onclick = () => {
     btnEducationPrimary.classList.add('active'); btnEducationSecondary.classList.remove('active');
     applySchoolFilter(); applySettlementFilter();
@@ -888,7 +889,6 @@ btnEducationPrimary.onclick = () => {
     settlementsVector.setStyle(settlementsEducationStyle);
     updateEducationAnalytics('primary');
 };
-
 btnEducationSecondary.onclick = () => {
     btnEducationSecondary.classList.add('active'); btnEducationPrimary.classList.remove('active');
     applySchoolFilter(); applySettlementFilter();
@@ -898,12 +898,7 @@ btnEducationSecondary.onclick = () => {
     updateEducationAnalytics('secondary');
 };
 
-// ---------------- HEALTH LEGENDS ----------------
-const healthLegendFacilities = document.getElementById('health-legend-facilities');
-const healthLegendService    = document.getElementById('health-legend-service');
-const healthLegendDeficit    = document.getElementById('health-legend-deficit');
-
-// ---------------- APPLY HEALTH TAB ----------------
+// ---- Health sub-tabs ----
 function applyHealthTab(tab) {
     healthVector.setVisible(false); bufferVector.setVisible(false);
     roadsVector.setVisible(false);  settlementsVector.setVisible(false);
@@ -938,14 +933,12 @@ function applyHealthTab(tab) {
     updateHealthAnalytics();
 }
 
-// ---------------- TABS ----------------
-tabOverview.onclick   = () => switchTab('overview');
-tabDemography.onclick = () => switchTab('demography');
-tabWelfare.onclick    = () => switchTab('welfare');
-tabHealth.onclick     = () => switchTab('health');
-tabRoads.onclick      = () => switchTab('roads');
-tabEducation.onclick  = () => switchTab('education');
+function setActiveHealthTab(activeBtn) {
+    [btnHealthDist, btnHealthZone, btnHealthDeficit].forEach(b => b.classList.remove('active'));
+    activeBtn.classList.add('active');
+}
 
+// ---- Welfare sub-tabs ----
 btnPrev.onclick = () => {
     welfareMode = 'prevalence'; btnPrev.classList.add('active'); btnGap.classList.remove('active');
     applyWelfareStyle(); updateWelfareStats();
@@ -959,11 +952,6 @@ btnHealthDist.onclick    = () => { setActiveHealthTab(btnHealthDist);    applyHe
 btnHealthZone.onclick    = () => { setActiveHealthTab(btnHealthZone);    applyHealthTab('service'); };
 btnHealthDeficit.onclick = () => { setActiveHealthTab(btnHealthDeficit); applyHealthTab('deficit'); };
 
-function setActiveHealthTab(activeBtn) {
-    [btnHealthDist, btnHealthZone, btnHealthDeficit].forEach(b => b.classList.remove('active'));
-    activeBtn.classList.add('active');
-}
-
 // ---------------- ZOOM ----------------
 document.getElementById('zoom-layer').onclick = () => {
     const features = wardVectorSource.getFeatures();
@@ -972,74 +960,106 @@ document.getElementById('zoom-layer').onclick = () => {
     map.getView().fit(extent, { padding: [50, 50, 50, 50], duration: 800 });
 };
 
-// ---------------- SWITCH TAB ----------------
+// ================= SWITCH TAB =================
 function switchTab(mode) {
-    [overviewContent, demographyContent, welfareContent, healthContent, roadsContent,
-     waterContent, educationContent].forEach(el => el.style.display = 'none');
+    // Hide all content panels
+    [overviewContent, demographyContent, welfareContent, healthContent,
+     roadsContent, waterContent, educationContent].forEach(el => el.style.display = 'none');
 
-    [popLegend, prevLegend, gapLegend, healthLegendFacilities, healthLegendService,
-     healthLegendDeficit].forEach(el => el.style.display = 'none');
+    // Hide all legends
+    [popLegend, prevLegend, gapLegend, healthLegendFacilities,
+     healthLegendService, healthLegendDeficit].forEach(el => el.style.display = 'none');
     document.getElementById('education-legend').style.display       = 'none';
     document.getElementById('roads-legend-condition').style.display = 'none';
     document.getElementById('roads-legend-surface').style.display   = 'none';
     waterLegendFunctional.style.display = 'none';
     waterLegendType.style.display       = 'none';
 
-    [tabOverview, tabDemography, tabWelfare, tabHealth, tabRoads, tabWater, tabEducation]
-        .forEach(t => t.classList.remove('active'));
+    // Deactivate all tab buttons
+    [tabOverview, tabDemography, tabWelfare, tabHealth,
+     tabRoads, tabWater, tabEducation].forEach(t => t.classList.remove('active'));
 
-    healthVector.setVisible(false); bufferVector.setVisible(false);
-    roadsVector.setVisible(false);  settlementsVector.setVisible(false);
-    waterVector.setVisible(false);  schoolVector.setVisible(false);
+    // Hide all overlay layers (ward layer stays visible always)
+    healthVector.setVisible(false);
+    bufferVector.setVisible(false);
+    roadsVector.setVisible(false);
+    settlementsVector.setVisible(false);
+    waterVector.setVisible(false);
+    schoolVector.setVisible(false);
 
-    wardLayer.setStyle(wardLabelStyle);
-
+    // ── OVERVIEW ──────────────────────────────────────────────────────────
     if (mode === 'overview') {
         overviewContent.style.display = 'block';
-        wardLayer.setStyle(overviewStyle);
         tabOverview.classList.add('active');
+        wardLayer.setStyle(overviewStyle);
         updateOverviewAnalytics();
     }
+
+    // ── DEMOGRAPHY ────────────────────────────────────────────────────────
     else if (mode === 'demography') {
         demographyContent.style.display = 'block';
+        tabDemography.classList.add('active');
         wardLayer.setStyle(demographyStyle);
         popLegend.style.display = 'block';
-        tabDemography.classList.add('active');
         updatePopulationStats();
     }
+
+    // ── WELFARE ───────────────────────────────────────────────────────────
     else if (mode === 'welfare') {
         welfareContent.style.display = 'block';
         tabWelfare.classList.add('active');
-        applyWelfareStyle(); updateWelfareStats(); updateWelfareChart();
+        applyWelfareStyle();
+        updateWelfareStats();
+        updateWelfareChart();
     }
+
+    // ── PUBLIC HEALTH ─────────────────────────────────────────────────────
+    // Ward boundary stays as overviewStyle so it is always visible underneath
     else if (mode === 'health') {
         healthContent.style.display = 'block';
         tabHealth.classList.add('active');
+        wardLayer.setStyle(overviewStyle);
         setActiveHealthTab(btnHealthDist);
         applyHealthTab('facilities');
     }
+
+    // ── ROAD NETWORKS ─────────────────────────────────────────────────────
     else if (mode === 'roads') {
         roadsContent.style.display = 'block';
         tabRoads.classList.add('active');
-        roadsVector.setVisible(true); applyRoadFilter();
+        wardLayer.setStyle(overviewStyle);
+        roadsVector.setVisible(true);
+        applyRoadFilter();
         roadsVector.setStyle(roadConditionStyle);
         document.getElementById('roads-legend-condition').style.display = 'block';
-        btnRoadCondition.classList.add('active'); btnRoadSurface.classList.remove('active');
+        btnRoadCondition.classList.add('active');
+        btnRoadSurface.classList.remove('active');
         updateRoadsAnalytics();
     }
+
+    // ── WATER & SANITATION ────────────────────────────────────────────────
     else if (mode === 'water') {
         waterContent.style.display = 'block';
         tabWater.classList.add('active');
-        applyWaterFilter(); btnWaterFunctional.click();
-        map.removeLayer(waterVector); map.addLayer(waterVector);
+        wardLayer.setStyle(overviewStyle);
+        applyWaterFilter();
+        btnWaterFunctional.click();
+        map.removeLayer(waterVector);
+        map.addLayer(waterVector);
     }
+
+    // ── EDUCATION ─────────────────────────────────────────────────────────
     else if (mode === 'education') {
         educationContent.style.display = 'block';
         tabEducation.classList.add('active');
+        wardLayer.setStyle(overviewStyle);
         document.getElementById('education-legend').style.display = 'block';
-        applySchoolFilter(); applySettlementFilter();
-        schoolVector.setVisible(true); settlementsVector.setVisible(true);
-        map.removeLayer(schoolVector); map.addLayer(schoolVector);
+        applySchoolFilter();
+        applySettlementFilter();
+        schoolVector.setVisible(true);
+        settlementsVector.setVisible(true);
+        map.removeLayer(schoolVector);
+        map.addLayer(schoolVector);
         updateEducationAnalytics('primary');
     }
 }
@@ -1049,9 +1069,13 @@ let welfareMode = 'prevalence';
 
 function applyWelfareStyle() {
     if (welfareMode === 'prevalence') {
-        wardLayer.setStyle(prevalenceStyle); prevLegend.style.display = 'block'; gapLegend.style.display = 'none';
+        wardLayer.setStyle(prevalenceStyle);
+        prevLegend.style.display = 'block';
+        gapLegend.style.display  = 'none';
     } else {
-        wardLayer.setStyle(gapStyle); gapLegend.style.display = 'block'; prevLegend.style.display = 'none';
+        wardLayer.setStyle(gapStyle);
+        gapLegend.style.display  = 'block';
+        prevLegend.style.display = 'none';
     }
 }
 
@@ -1073,7 +1097,6 @@ function updatePopulationCharts() {
     if (!features.length) return;
 
     let labels = [], m_0_14 = [], f_0_14 = [], m_15_64 = [], f_15_64 = [], m_65 = [], f_65 = [];
-
     const isWard = elWard.value, isConst = elConst.value, isProv = elProv.value;
 
     if (isWard) {
@@ -1131,7 +1154,6 @@ function updatePopulationCharts() {
         ]},
         options: chartOptions('Population (0–14 Years)')
     });
-
     chart15_64 = new Chart(document.getElementById('chart_15_64'), {
         type: 'bar',
         data: { labels, datasets: [
@@ -1140,7 +1162,6 @@ function updatePopulationCharts() {
         ]},
         options: chartOptions('Population (15–64 Years)')
     });
-
     chart65 = new Chart(document.getElementById('chart_65'), {
         type: 'bar',
         data: { labels, datasets: [
@@ -1152,10 +1173,10 @@ function updatePopulationCharts() {
 }
 
 function updateWelfareStats() {
-    const data  = wardVectorSource.getFeatures();
-    const field = welfareMode === 'prevalence' ? 'poverty_pr' : 'poverty_ga';
-    const vals  = data.map(f => f.get(field) || 0);
-    const avgVal= vals.length ? (vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(2) : 'N/A';
+    const data   = wardVectorSource.getFeatures();
+    const field  = welfareMode === 'prevalence' ? 'poverty_pr' : 'poverty_ga';
+    const vals   = data.map(f => f.get(field) || 0);
+    const avgVal = vals.length ? (vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(2) : 'N/A';
     document.getElementById('wel-province').innerText     = elProv.value  || 'N/A';
     document.getElementById('wel-constituency').innerText = elConst.value || 'N/A';
     document.getElementById('wel-value').innerText        = avgVal;
@@ -1173,7 +1194,7 @@ function updateWelfareChart() {
     const isWard = elWard.value, isConst = elConst.value;
     if (isWard) {
         const f = features.find(ft => String(ft.get('wardnumber')) === String(elWard.value));
-        labels = ['Selected Ward'];
+        labels      = ['Selected Ward'];
         poorData    = [f ? f.get('poor')     || 0 : 0];
         nonPoorData = [f ? f.get('none_poor')|| 0 : 0];
     } else if (isConst) {
@@ -1240,14 +1261,3 @@ async function init() {
 }
 
 init();
-
-// ================= HTML PLACEHOLDERS REQUIRED =================
-// Add these empty divs inside each tab's content panel in your HTML:
-//
-//  Overview tab:    <div id="analytics-overview"></div>
-//  Demography tab:  <div id="analytics-demography"></div>  (place after each chart canvas)
-//  Welfare tab:     <div id="analytics-welfare"></div>
-//  Health tab:      <div id="analytics-health"></div>
-//  Roads tab:       <div id="analytics-roads"></div>
-//  Water tab:       <div id="analytics-water"></div>
-//  Education tab:   <div id="analytics-education"></div>
