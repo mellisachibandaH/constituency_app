@@ -403,7 +403,7 @@ function overviewStyle(f) {
 
 // ---------------- DROPDOWNS ----------------
 const elProv  = document.getElementById('select-province');
-const elConst = document.getElementById('select-Constituency');
+const elConst = document.getElementById('select-constituency');
 const elWard  = document.getElementById('select-ward');
 
 function escapeCQL(str) { return str ? str.replace(/'/g, "''") : ''; }
@@ -905,7 +905,7 @@ function updatePopulationStats() {
     const data  = wardVectorSource.getFeatures();
     const total = data.reduce((s, f) => s + (f.get('total_popu') || 0), 0);
     document.getElementById('pop-province').innerText     = elProv.value  || 'N/A';
-    document.getElementById('pop-Constituency').innerText = elConst.value || 'N/A';
+    document.getElementById('pop-constituency').innerText = elConst.value || 'N/A';
     document.getElementById('pop-total').innerText        = total;
     updatePopulationCharts();
 }
@@ -1007,7 +1007,7 @@ function updateWelfareStats() {
     const vals  = data.map(f => f.get(field) || 0);
     const avg   = vals.length ? (vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(2) : 'N/A';
     document.getElementById('wel-province').innerText     = elProv.value  || 'N/A';
-    document.getElementById('wel-Constituency').innerText = elConst.value || 'N/A';
+    document.getElementById('wel-constituency').innerText = elConst.value || 'N/A';
     document.getElementById('wel-value').innerText        = avg;
     updateWelfareChart();
 }
