@@ -28,9 +28,9 @@ function filteredFeatures(raw) {
     const c = elConst ? elConst.value : '';
     const w = elWard  ? elWard.value  : '';
     return GJ_FORMAT.readFeatures(raw, { featureProjection: 'EPSG:3857' }).filter(f => {
-        if (p && f.get('Province')   !== p)            return false;
-        if (c && f.get('Constituen') !== c)            return false;
-        if (w && String(f.get('Wardnumber')) !== String(w)) return false;
+        if (p && f.get('province')   !== p)            return false;
+        if (c && f.get('constituen') !== c)            return false;
+        if (w && String(f.get('wardnumber')) !== String(w)) return false;
         return true;
     });
 }
@@ -85,10 +85,10 @@ function closePopup() {
 }
 
 function setSchoolPopupContent(feature) {
-    const name      = feature.get('Name')       || 'N/A';
-    const ownership = feature.get('Responsibl') || 'N/A';
-    const female    = feature.get('Enrol_fema') || 0;
-    const male      = feature.get('Enrol_male') || 0;
+    const name      = feature.get('name')       || 'N/A';
+    const ownership = feature.get('responsibl') || 'N/A';
+    const female    = feature.get('enrol_fema') || 0;
+    const male      = feature.get('enrol_male') || 0;
     const total     = feature.get('total_pupi') || 0;
     const teachers  = feature.get('teachers')   || 0;
     const ratio     = feature.get('teacher_pu') || 'N/A';
@@ -119,11 +119,9 @@ map.on('singleclick', function(evt) {
 });
 
 const tabButtons = document.querySelectorAll('.tabs button');
-if (tabButtons) {
-    tabButtons.forEach(tab => {
-        tab.addEventListener('click', () => closePopup());
-    });
-}
+tabButtons.forEach(tab => {
+    tab.addEventListener('click', () => closePopup());
+});
 
 // ---------------- VECTOR SOURCES ----------------
 const wardVectorSource  = new ol.source.Vector();
@@ -182,7 +180,7 @@ map.addLayer(schoolVector);
 function wardLabelStyle(f) {
     return new ol.style.Style({
         text: new ol.style.Text({
-            text:   String(f.get('Wardnumber') || ''),
+            text:   String(f.get('wardnumber') || ''),
             font:   'bold 14px Calibri',
             fill:   new ol.style.Fill({ color: '#000' }),
             stroke: new ol.style.Stroke({ color: '#fff', width: 2 })
@@ -446,7 +444,7 @@ function applyHealthFilter() {
 function populateProvinces() {
     if (!RAW.ward) return;
     const vals = RAW.ward.features
-        .map(f => f.properties.Province)
+        .map(f => f.properties.province)
         .filter(v => v != null);
     const unique = [...new Set(vals)].sort();
     unique.forEach(p => elProv.add(new Option(p, p)));
@@ -464,7 +462,7 @@ elProv.addEventListener('change', async () => {
         elConst.innerHTML = '<option value="">Select Constituency</option>';
         elWard.innerHTML  = '<option value="">Select Ward</option>';
         document.getElementById('res-province').innerText     = 'N/A';
-        document.getElementById('res-Constituency').innerText = 'N/A';
+        document.getElementById('res-constituency').innerText = 'N/A';
         document.getElementById('res-ward').innerText         = 'N/A';
         updatePopulationStats();
         updateWelfareStats();
@@ -476,11 +474,11 @@ elProv.addEventListener('change', async () => {
 
     document.getElementById('res-province').innerText = elProv.value;
 
-    // Populate Constituencies from raw data
+    // Populate constituencies from raw data
     const consts = [...new Set(
         RAW.ward.features
             .filter(f => f.properties.province === elProv.value)
-            .map(f => f.properties.Constituen)
+            .map(f => f.properties.constituen)
             .filter(v => v != null)
     )].sort();
 
@@ -491,7 +489,7 @@ elProv.addEventListener('change', async () => {
     elWard.disabled  = true;
     elWard.innerHTML = '<option value="">Select Ward</option>';
 
-    document.getElementById('res-Constituency').innerText = 'N/A';
+    document.getElementById('res-constituency').innerText = 'N/A';
     document.getElementById('res-ward').innerText         = 'N/A';
 
     updatePopulationStats();
@@ -508,14 +506,14 @@ elConst.addEventListener('change', async () => {
 
     applyWardFilter();
 
-    document.getElementById('res-Constituency').innerText = elConst.value;
+    document.getElementById('res-constituency').innerText = elConst.value;
     document.getElementById('display-title').innerText    = `${elConst.value} Overview`;
 
     // Populate wards from raw data
     const wards = [...new Set(
         RAW.ward.features
-            .filter(f => f.properties.province === elProv.value && f.properties.Constituen === elConst.value)
-            .map(f => f.properties.Wardnumber)
+            .filter(f => f.properties.province === elProv.value && f.properties.constituen === elConst.value)
+            .map(f => f.properties.wardnumber)
             .filter(v => v != null)
     )].sort((a, b) => Number(a) - Number(b));
 
@@ -714,12 +712,12 @@ function applyHealthTab(tab) {
 }
 
 // ---------------- TABS ----------------
-if (tabOverview) tabOverview.onclick = () => switchTab('overview');
-if (tabDemography) tabDemography.onclick = () => switchTab('demography');
-if (tabWelfare) tabWelfare.onclick = () => switchTab('welfare');
-if (tabHealth) tabHealth.onclick = () => switchTab('health');
-if (tabRoads) tabRoads.onclick = () => switchTab('roads');
-if (tabEducation) tabEducation.onclick = () => switchTab('education');
+tabOverview.onclick   = () => switchTab('overview');
+tabDemography.onclick = () => switchTab('demography');
+tabWelfare.onclick    = () => switchTab('welfare');
+tabHealth.onclick     = () => switchTab('health');
+tabRoads.onclick      = () => switchTab('roads');
+tabEducation.onclick  = () => switchTab('education');
 
 btnPrev.onclick = () => {
     welfareMode = 'prevalence';
@@ -924,7 +922,7 @@ function updatePopulationCharts() {
     const isProv  = elProv.value;
 
     if (isWard) {
-        const f = features.find(ft => String(ft.get('Wardnumber')) === String(elWard.value));
+        const f = features.find(ft => String(ft.get('wardnumber')) === String(elWard.value));
         if (!f) return;
         labels  = ['Selected Ward'];
         m_0_14  = [f.get('m_0_14')  || 0]; f_0_14  = [f.get('f_0_14')  || 0];
@@ -932,10 +930,10 @@ function updatePopulationCharts() {
         m_65    = [f.get('m_65')    || 0]; f_65    = [f.get('f_65')    || 0];
     }
     else if (isConst) {
-        const constFeatures = features.filter(f => f.get('Constituen') === elConst.value);
+        const constFeatures = features.filter(f => f.get('constituen') === elConst.value);
         if (!constFeatures.length) return;
         constFeatures.forEach(f => {
-            labels.push('Ward ' + (f.get('Wardnumber') || ''));
+            labels.push('Ward ' + (f.get('wardnumber') || ''));
             m_0_14.push(f.get('m_0_14')  || 0); f_0_14.push(f.get('f_0_14')  || 0);
             m_15_64.push(f.get('m_15_64')|| 0); f_15_64.push(f.get('f_15_64')|| 0);
             m_65.push(f.get('m_65')      || 0); f_65.push(f.get('f_65')      || 0);
@@ -946,7 +944,7 @@ function updatePopulationCharts() {
         if (!provFeatures.length) return;
         const grouped = {};
         provFeatures.forEach(f => {
-            const cn = f.get('Constituen') || 'Unknown';
+            const cn = f.get('constituen') || 'Unknown';
             if (!grouped[cn]) grouped[cn] = { m_0_14:0,f_0_14:0,m_15_64:0,f_15_64:0,m_65:0,f_65:0 };
             grouped[cn].m_0_14  += f.get('m_0_14')  || 0;
             grouped[cn].f_0_14  += f.get('f_0_14')  || 0;
@@ -1025,14 +1023,14 @@ function updateWelfareChart() {
     const isConst = elConst.value;
 
     if (isWard) {
-        const f = features.find(ft => String(ft.get('Wardnumber')) === String(elWard.value));
+        const f = features.find(ft => String(ft.get('wardnumber')) === String(elWard.value));
         labels      = ['Selected Ward'];
         poorData    = [f ? f.get('poor')     || 0 : 0];
         nonPoorData = [f ? f.get('none_poor')|| 0 : 0];
     }
     else if (isConst) {
         features.forEach(f => {
-            labels.push('Ward ' + (f.get('Wardnumber') || ''));
+            labels.push('Ward ' + (f.get('wardnumber') || ''));
             poorData.push(f.get('poor')     || 0);
             nonPoorData.push(f.get('none_poor')|| 0);
         });
@@ -1040,7 +1038,7 @@ function updateWelfareChart() {
     else {
         const grouped = {};
         features.forEach(f => {
-            const cn = f.get('Constituen') || 'Unknown';
+            const cn = f.get('constituen') || 'Unknown';
             if (!grouped[cn]) grouped[cn] = { poor:0, none_poor:0 };
             grouped[cn].poor      += f.get('poor')     || 0;
             grouped[cn].none_poor += f.get('none_poor')|| 0;
@@ -1114,6 +1112,4 @@ async function init() {
     switchTab('overview');
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    init();
-});
+init();
