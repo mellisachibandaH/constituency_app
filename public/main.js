@@ -85,10 +85,10 @@ function closePopup() {
 }
 
 function setSchoolPopupContent(feature) {
-    const name      = feature.get('name')       || 'N/A';
-    const ownership = feature.get('responsibl') || 'N/A';
-    const female    = feature.get('enrol_fema') || 0;
-    const male      = feature.get('enrol_male') || 0;
+    const name      = feature.get('Name')       || 'N/A';
+    const ownership = feature.get('Responsibl') || 'N/A';
+    const female    = feature.get('Enrol_fema') || 0;
+    const male      = feature.get('Enrol_male') || 0;
     const total     = feature.get('total_pupi') || 0;
     const teachers  = feature.get('teachers')   || 0;
     const ratio     = feature.get('teacher_pu') || 'N/A';
